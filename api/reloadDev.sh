@@ -9,7 +9,7 @@ log() {
 
 buildServer() {
   log "Building server binary"
-  go build -gcflags "all=-N -l" -o $ACCOUNT_SERVER cmd/api/main.go
+  go build -gcflags "all=-N -l" -o $ACCOUNT_SERVER cmd/account/main.go
   chmod +x $ACCOUNT_SERVER
 }
 
