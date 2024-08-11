@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Account/handlers"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net"
@@ -10,8 +11,8 @@ import (
 
 func main() {
 	router := configureRouter()
-	host := os.Getenv("HOST")
-	port := os.Getenv("PORT")
+	host := os.Getenv("127.0.0.1")
+	port := os.Getenv("8080")
 	if net.ParseIP(host) == nil {
 		_ = fmt.Errorf("error: %s is not a valid IP address. Falling back to: %s", host, "0.0.0.0")
 		host = "0.0.0.0"
@@ -26,5 +27,12 @@ func main() {
 
 func configureRouter() *gin.Engine {
 	r := gin.Default()
+	initialiseHandlers(r)
 	return r
+}
+
+// initialiseHandlers initialises handlers for routes and types/domains.
+func initialiseHandlers(r *gin.Engine) {
+	// Register routes
+	handlers.ApiHealthCheckRoutes(&r.RouterGroup)
 }
