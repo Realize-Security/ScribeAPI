@@ -1,0 +1,76 @@
+version: "3.9"
+
+services:
+
+  nginx_account_api:
+    container_name: nginx_account_api
+    build:
+      context: ./nginx
+      args:
+        - DEPLOY_ENV=DEV
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - account_api
+    depends_on:
+      - account_api
+    volumes:
+      - account_nginx_logging:/vol/log/nginx
+
+  account_api:
+    container_name: account_api
+    build:
+      context: api
+      dockerfile: Dockerfile.dev
+    environment:
+      - ADDR=0.0.0.0
+      - PORT=8080
+      - GO_ENV=development
+      - CGO_ENABLED=0
+    ports:
+      - "8080:8080"
+      - "8000:8000"
+      - "40000:40000"
+    networks:
+      - account_api
+      - account_postgres
+    security_opt:
+      - "seccomp:unconfined"
+    cap_add:
+      - SYS_PTRACE
+    restart: unless-stopped
+    volumes:
+      - ./api:/go/src/api
+    env_file:
+      - ./db-variables-dev.env
+    depends_on:
+      - account_postgres
+
+  account_postgres:
+    container_name: account_postgres
+    image: postgres:15.8-alpine3.20
+    restart: unless-stopped
+    user: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - account_postgres
+    volumes:
+      - account_postgres_data:/var/lib/postgresql/data
+      - ./db_scripts:/docker-entrypoint-initdb.d/
+    env_file:
+      - ./db-variables-dev.env
+
+volumes:
+  account_postgres_data:
+  account_api:
+  account_nginx_logging:
+
+
+networks:
+  account_api:
+    driver: bridge
+  account_postgres:
+    driver: bridge

@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+
+  nginx_account_api:
+    container_name: nginx_account_api
+    build:
+      context: ./nginx
+      args:
+        - DEPLOY_ENV=PROD
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - account_api
+    depends_on:
+      - account_api
+    volumes:
+      - account_nginx_logging:/vol/log/nginx
+
+  account_api:
+    container_name: account_api
+    build:
+      context: api
+      dockerfile: Dockerfile.prod
+      target: deploy
+    environment:
+      - ADDR=0.0.0.0
+      - PORT=8080
+      - GO_ENV=production
+      - GIN_MODE=release
+    restart: unless-stopped
+    env_file:
+      - ./db-variables.prod.env
+    depends_on:
+      - account_postgres
+    command: ./run
+
+  account_postgres:
+    container_name: account_postgres
+    image: postgres:15.8-alpine3.20
+    restart: unless-stopped
+    user: postgres
+    networks:
+      - account_postgres
+    volumes:
+      - account_postgres_data:/var/lib/postgresql/data
+      - ./db_scripts:/docker-entrypoint-initdb.d/
+    env_file:
+      - ./db-variables-dev.env
+
+volumes:
+  account_nginx_logging:
+  account_postgres_data:
+
+networks:
+  account_api:
+    driver: bridge
+  account_postgres:
+    driver: bridge
