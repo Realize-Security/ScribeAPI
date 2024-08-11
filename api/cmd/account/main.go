@@ -11,8 +11,8 @@ import (
 
 func main() {
 	router := configureRouter()
-	host := os.Getenv("127.0.0.1")
-	port := os.Getenv("8080")
+	host := os.Getenv("HOST")
+	port := os.Getenv("PORT")
 	if net.ParseIP(host) == nil {
 		_ = fmt.Errorf("error: %s is not a valid IP address. Falling back to: %s", host, "0.0.0.0")
 		host = "0.0.0.0"
