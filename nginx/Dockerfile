@@ -8,7 +8,7 @@ USER root
 
 COPY ./certs/$DEPLOY_ENV/fullchain.pem /etc/ssl/
 COPY ./certs/$DEPLOY_ENV/privkey.pem /etc/ssl/private/
-COPY ./dhparam4096.pem /etc/ssl/certs/dhparam4096.pem
+COPY ./dhparams2048.pem /etc/ssl/certs/dhparams2048.pem
 RUN rm /etc/nginx/conf.d/default.conf
 COPY ./nginx.conf /etc/nginx/conf.d/nginx.conf
 COPY ./ssl-params.conf /etc/nginx/snippets/ssl-params.conf
