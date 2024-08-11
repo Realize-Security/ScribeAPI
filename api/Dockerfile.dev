@@ -24,7 +24,7 @@ RUN apk add --no-cache bash && \
     chown -R account:account /go/src/exec_dir && \
     chown -R account:account /vol/log
 
-RUN go install github.com/go-delve/delve/cmd/dlv@v1.20.1
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.23.0
 RUN chown account:account /go/bin/dlv
 
 COPY . .
