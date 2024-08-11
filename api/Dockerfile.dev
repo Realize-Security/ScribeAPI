@@ -32,4 +32,4 @@ COPY . .
 USER account:account
 RUN PATH=$PATH:/usr/bin
 
-ENTRYPOINT sh reloadDev.sh
+ENTRYPOINT sh golang_hot_reload.sh
