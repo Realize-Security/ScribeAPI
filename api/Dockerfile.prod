@@ -1,0 +1,31 @@
+FROM golang:1.22.6-alpine3.20 AS build
+
+LABEL maintainer="Realize Security Ltd."
+
+WORKDIR /go/src/api
+
+ENV GO111MODULE=on
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+COPY . .
+
+RUN apk add --no-cache bash && \
+    apk add --no-cache ca-certificates && \
+    apk add --no-cache libc6-compat && \
+    apk add --no-cache build-base && \
+    adduser --disabled-password --no-create-home account && \
+    mkdir -p /vol/log && \
+    chown -R account:account /vol/log
+
+RUN go build -o ./Account cmd/api/main.go
+
+# Image created: Dec 31, 1, 3:47:32 PM
+FROM gcr.io/distroless/base-debian12@sha256-8d946e4103571ec0e2f471eac7c4859a7f169686d222f5c8b2d9d391d6d1e50c AS deploy
+
+COPY --from=build /go/src/api/Account Account
+
+CMD ["./Account"]

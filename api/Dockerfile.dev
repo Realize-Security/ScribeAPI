@@ -1,0 +1,35 @@
+FROM golang:1.22.6-alpine3.20
+
+LABEL maintainer="Realize Security Ltd."
+
+WORKDIR /go/src/api
+
+ENV GO111MODULE=on
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+# create a new executing directory '/go/src/exec_dir' and move the binary there
+# avoids trying to drop the binary into the volume created for live reload
+# home directory is added to get round build cache exceptions
+RUN apk add --no-cache bash && \
+    apk add --no-cache ca-certificates && \
+    adduser --disabled-password account && \
+    apk update && apk add --no-cache git && \
+    apk add inotify-tools && \
+    mkdir -p /vol/log && \
+    mkdir /go/src/exec_dir && \
+    chown -R account:account /go/src/exec_dir && \
+    chown -R account:account /vol/log
+
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.20.1
+RUN chown account:account /go/bin/dlv
+
+COPY . .
+
+USER account:account
+RUN PATH=$PATH:/usr/bin
+
+ENTRYPOINT sh reloadDev.sh
