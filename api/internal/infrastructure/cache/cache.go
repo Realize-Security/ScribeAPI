@@ -5,10 +5,14 @@ import (
 	"github.com/valkey-io/valkey-go"
 	"log"
 	"os"
+	"time"
 )
 
-var Client valkey.Client
-var Ctx context.Context
+var (
+	Client valkey.Client
+	ctx    context.Context
+	cancel context.CancelFunc
+)
 
 func ConnectCache() valkey.Client {
 	var h = os.Getenv("CACHE_HOST")
@@ -25,6 +29,10 @@ func ConnectCache() valkey.Client {
 
 func InitCache() {
 	log.Println("Initializing cache")
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 	Client = ConnectCache()
-	Ctx = context.Background()
+	if Client == nil {
+		log.Println("[!] Failed to connect to cache")
+		os.Exit(1)
+	}
 }

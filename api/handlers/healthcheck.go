@@ -8,7 +8,7 @@ func ApiHealthCheckRoutes(r *gin.RouterGroup) {
 	healthcheck := r.Group("/api")
 	{
 		healthcheck.GET("/", apiHealthCheck)
-		healthcheck.GET("/api/health", apiHealthCheck)
+		healthcheck.GET("/healthcheck", apiHealthCheck)
 	}
 }
 

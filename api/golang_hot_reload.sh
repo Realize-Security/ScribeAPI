@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ACCOUNT_SERVER="/go/src/exec_dir/Account"
+SCRIBE_SERVER="/go/src/exec_dir/Scribe"
 WORKDIR="/go/src/api"
 
 log() {
@@ -9,8 +9,14 @@ log() {
 
 buildServer() {
   log "Building server binary"
-  go build -gcflags "all=-N -l" -o $ACCOUNT_SERVER cmd/account/main.go
-  chmod +x $ACCOUNT_SERVER
+  go build -gcflags "all=-N -l" -o $SCRIBE_SERVER cmd/scribe/main.go
+  if [ $? -eq 0 ]; then
+      echo "Server binary build OK."
+  else
+      echo "Server binary build FAILED."
+      exit 0
+  fi
+  chmod +x $SCRIBE_SERVER
 }
 
 runTests() {
@@ -22,9 +28,9 @@ runServer() {
   log "Run server"
   log "Killing old server"
   killall dlv
-  killall Account
+  killall Scribe
   log "Run in debug mode"
-  /go/bin/dlv --listen=:40000 --headless=true --api-version=2 --accept-multiclient exec $ACCOUNT_SERVER &
+  /go/bin/dlv --listen=:40000 --headless=true --api-version=2 --accept-multiclient exec $SCRIBE_SERVER &
 }
 
 rerunServer() {

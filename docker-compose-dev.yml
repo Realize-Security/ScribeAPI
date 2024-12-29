@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   nginx_scribe_api:
@@ -29,6 +27,7 @@ services:
       - PORT=8080
       - GO_ENV=development
       - CGO_ENABLED=0
+      - GIN_MODE=debug
     ports:
       - "8080:8080"
       - "8000:8000"
@@ -36,6 +35,7 @@ services:
     networks:
       - scribe_api
       - scribe_postgres
+      - scribe_cache
     security_opt:
       - "seccomp:unconfined"
     cap_add:
@@ -45,6 +45,7 @@ services:
       - ./api:/go/src/api
     env_file:
       - ./db-variables-dev.env
+      - ./cache-variables.env
     depends_on:
       - scribe_postgres
 
