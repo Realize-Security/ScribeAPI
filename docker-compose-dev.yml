@@ -63,6 +63,20 @@ services:
     env_file:
       - ./db-variables-dev.env
 
+
+  account_cache:
+    container_name: account_cache
+    image: valkey/valkey:7.2.6-alpine3.20
+    restart: unless-stopped
+    user: valkey
+    ports:
+      - "6379:6379"
+    networks:
+      - account_cache
+    volumes:
+      - ./valkey/:/usr/local/etc/valkey
+
+
 volumes:
   account_postgres_data:
   account_api:
@@ -73,4 +87,6 @@ networks:
   account_api:
     driver: bridge
   account_postgres:
+    driver: bridge
+  account_cache:
     driver: bridge

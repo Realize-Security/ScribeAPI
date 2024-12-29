@@ -2,6 +2,7 @@ package main
 
 import (
 	"Account/handlers"
+	"Account/internal/infrastructure/cache"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net"
@@ -22,6 +23,10 @@ func main() {
 		_ = fmt.Errorf("error: %s is not a valid port. Falling back to: %s", port, "8080")
 		port = "8080"
 	}
+
+	cache.InitCache()
+	defer cache.Client.Close()
+
 	_ = router.Run(host + ":" + port)
 }
 
