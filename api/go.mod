@@ -1,4 +1,4 @@
-module Account
+module Scribe
 
 go 1.22
 

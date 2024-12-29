@@ -2,8 +2,8 @@ version: "3.9"
 
 services:
 
-  nginx_account_api:
-    container_name: nginx_account_api
+  nginx_scribe_api:
+    container_name: nginx_scribe_api
     build:
       context: ./nginx
       args:
@@ -13,14 +13,14 @@ services:
       - "80:80"
       - "443:443"
     networks:
-      - account_api
+      - scribe_api
     depends_on:
-      - account_api
+      - scribe_api
     volumes:
-      - account_nginx_logging:/vol/log/nginx
+      - scribe_nginx_logging:/vol/log/nginx
 
-  account_api:
-    container_name: account_api
+  scribe_api:
+    container_name: scribe_api
     build:
       context: api
       dockerfile: Dockerfile.dev
@@ -34,8 +34,8 @@ services:
       - "8000:8000"
       - "40000:40000"
     networks:
-      - account_api
-      - account_postgres
+      - scribe_api
+      - scribe_postgres
     security_opt:
       - "seccomp:unconfined"
     cap_add:
@@ -46,47 +46,47 @@ services:
     env_file:
       - ./db-variables-dev.env
     depends_on:
-      - account_postgres
+      - scribe_postgres
 
-  account_postgres:
-    container_name: account_postgres
+  scribe_postgres:
+    container_name: scribe_postgres
     image: postgres:15.8-alpine3.20
     restart: unless-stopped
     user: postgres
     ports:
       - "5432:5432"
     networks:
-      - account_postgres
+      - scribe_postgres
     volumes:
-      - account_postgres_data:/var/lib/postgresql/data
+      - scribe_postgres_data:/var/lib/postgresql/data
       - ./db_scripts:/docker-entrypoint-initdb.d/
     env_file:
       - ./db-variables-dev.env
 
 
-  account_cache:
-    container_name: account_cache
+  scribe_cache:
+    container_name: scribe_cache
     image: valkey/valkey:7.2.6-alpine3.20
     restart: unless-stopped
     user: valkey
     ports:
       - "6379:6379"
     networks:
-      - account_cache
+      - scribe_cache
     volumes:
       - ./valkey/:/usr/local/etc/valkey
 
 
 volumes:
-  account_postgres_data:
-  account_api:
-  account_nginx_logging:
+  scribe_postgres_data:
+  scribe_api:
+  scribe_nginx_logging:
 
 
 networks:
-  account_api:
+  scribe_api:
     driver: bridge
-  account_postgres:
+  scribe_postgres:
     driver: bridge
-  account_cache:
+  scribe_cache:
     driver: bridge

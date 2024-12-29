@@ -1,8 +1,8 @@
 package main
 
 import (
-	"Account/handlers"
-	"Account/internal/infrastructure/cache"
+	"Scribe/handlers"
+	"Scribe/internal/infrastructure/cache"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net"
