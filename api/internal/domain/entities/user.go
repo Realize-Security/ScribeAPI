@@ -15,13 +15,11 @@ type UserDBModel struct {
 	IsActive                bool                `gorm:"column:is_active;default:true"`
 	BadUser                 bool                `gorm:"column:bad_user;default:false"`
 	BadUserReason           string              `gorm:"column:bad_user_reason;varchar(500);default:''"`
-	LoginLocked             bool                `gorm:"column:login_locked;default:false"`
-	EmailValidated          bool                `gorm:"column:email_validated;default:false"`
-	PasswordResetToken      string              `gorm:"column:password_reset_token;type:varchar(255);unique;default:uuid_generate_v4()"`
-	OrganisationInviteToken string              `gorm:"column:org_invite_token;type:varchar(255);unique;default:uuid_generate_v4()"`
+	PasswordResetToken      *string             `gorm:"column:password_reset_token;type:varchar(255);unique"`
+	OrganisationInviteToken *string             `gorm:"column:org_invite_token;type:varchar(255);unique"`
 	OrganisationID          string              `gorm:"column:organisation_id;type:varchar(255);default:NULL"`
 	Organisation            OrganisationDBModel `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;default:NULL"`
-	Roles                   []RoleDBModel       `gorm:"many2many:user_roles;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	//Roles                   []RoleDBModel       `gorm:"many2many:user_roles;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 }
 
 func (u *UserDBModel) BeforeSave(tx *gorm.DB) error {
@@ -33,4 +31,13 @@ func (u *UserDBModel) BeforeSave(tx *gorm.DB) error {
 		u.BadUserReason = ""
 	}
 	return nil
+}
+
+type UserRegistration struct {
+	FirstName       string `json:"firstName" validate:"required,first_or_last_name"`
+	LastName        string `json:"lastName" validate:"required,first_or_last_name"`
+	Email           string `json:"email" validate:"required,email"`
+	Password        string `json:"password" validate:"required,validate_password,eqfield=ConfirmPassword"`
+	ConfirmPassword string `json:"confirmPassword" validate:"required"`
+	TermsAccepted   bool   `json:"termsAccepted,default:false" validate:"required"`
 }
