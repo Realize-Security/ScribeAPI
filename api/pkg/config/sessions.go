@@ -3,7 +3,8 @@ package config
 import "time"
 
 const (
-	ApiJwt                                   = "token"
+	ApiJwt                                   = "auth_token"
+	RefreshToken                             = "refresh_token"
 	JTI                                      = "jti"
 	HMACSecret                               = "secret"
 	LogBadSessionKeyAbort                    = "Insecure session key set. Aborting."
@@ -21,5 +22,6 @@ const (
 	CacheSessionPermissionsKey               = "permissions"
 	LogLoginSuccess                          = "Successfully logged in: %s"
 	LogHashingError                          = "error hashing password"
+	LogHashingErrorForUser                   = "error hashing password for: %s"
 	LogHashesDontMatch                       = "hashes don't match"
 )

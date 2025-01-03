@@ -23,15 +23,12 @@ services:
       context: api
       dockerfile: Dockerfile.prod
       target: deploy
-    environment:
-      - ADDR=0.0.0.0
-      - PORT=8080
-      - GO_ENV=production
-      - GIN_MODE=release
     restart: unless-stopped
     env_file:
       - ./db-variables.prod.env
+      - ./api-variables.prod.env
       - ./cache-variables.env
+      - ./common-api-variables.env
     depends_on:
       - scribe_postgres
     command: ./run

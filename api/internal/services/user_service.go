@@ -9,15 +9,18 @@ import (
 	"github.com/go-playground/validator/v10"
 	"log"
 	"net/http"
+	"os"
 )
 
 type UserService struct {
 	ur repositories.UserRepository
+	ar AuthenticationRepository
 }
 
-func NewUserServiceRepository(ur repositories.UserRepository) *UserService {
+func NewUserServiceRepository(ur repositories.UserRepository, ar AuthenticationRepository) *UserService {
 	return &UserService{
 		ur: ur,
+		ar: ar,
 	}
 }
 
@@ -43,7 +46,7 @@ func (us *UserService) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	hashed, err := HashPassword(newUser.ConfirmPassword)
+	hashed, err := us.ar.HashPassword(newUser.ConfirmPassword)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			config.ApiError: config.LogUserCreateFailed,
@@ -68,4 +71,59 @@ func (us *UserService) RegisterUser(c *gin.Context) {
 		})
 	}
 	return
+}
+
+func (us *UserService) Login(c *gin.Context) {
+	var login entities.UserLogin
+	err := c.BindJSON(&login)
+	if err != nil {
+		log.Printf(err.Error())
+		c.Writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	user, err := us.ur.FindByEmail(login.Email)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			config.ApiError: config.MessageInvalidCredentialsError,
+		})
+		return
+	}
+
+	if !us.ar.PasswordsMatch(user.Password, login.Password) {
+		log.Printf(config.LogHashingErrorForUser, user.Email)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			config.ApiError: config.MessageInvalidCredentialsError,
+		})
+		return
+	}
+
+	token, err := us.ar.GenerateAuthToken(user.UUID)
+	if err != nil {
+		log.Printf(config.LogHashingErrorForUser, user.UUID)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			config.ApiError: config.MessageInvalidCredentialsError,
+		})
+	} else {
+		log.Printf(config.LogLoginSuccess, user.UUID)
+		secure := secureCookies()
+		domain := cookieDomain()
+		c.SetCookie(config.ApiJwt, token.AuthToken, 3600, "/", domain, secure, true)
+		c.SetCookie(config.RefreshToken, token.RefreshToken, 3600, "/", domain, secure, true)
+		c.JSON(http.StatusOK, gin.H{
+			config.ApiMessage: token,
+		})
+	}
+	return
+}
+
+func secureCookies() bool {
+	if os.Getenv("GO_ENV") == "development" {
+		return false
+	}
+	return true
+}
+
+func cookieDomain() string {
+	return os.Getenv("COOKIE_DOMAIN")
 }

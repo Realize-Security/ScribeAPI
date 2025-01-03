@@ -10,6 +10,7 @@ import (
 
 type UserRepository interface {
 	Create(user *entities.UserDBModel) error
+	FindByEmail(email string) (*entities.UserDBModel, error)
 }
 
 type userRepository struct {
@@ -39,4 +40,19 @@ func (ur userRepository) Create(user *entities.UserDBModel) error {
 
 	log.Printf(config.LogUserCreateSuccess, user.UUID)
 	return nil
+}
+
+func (ur userRepository) FindByEmail(email string) (*entities.UserDBModel, error) {
+	var user entities.UserDBModel
+	result := ur.db.Raw("SELECT * FROM users WHERE users.email = @email  AND users.deleted_at IS NULL LIMIT 1",
+		map[string]interface{}{
+			"email": email,
+		}).Scan(&user)
+
+	if result.Error != nil || result.RowsAffected == 0 {
+		log.Printf(config.LogUserFindByEmailFailed, email)
+		return nil, errors.New("user not found")
+	}
+
+	return &user, nil
 }

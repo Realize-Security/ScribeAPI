@@ -21,7 +21,7 @@ import (
 
 func main() {
 
-	host := os.Getenv("HOST")
+	host := os.Getenv("ADDR")
 	port := os.Getenv("PORT")
 	if net.ParseIP(host) == nil {
 		_ = fmt.Errorf("error: %s is not a valid IP address. Falling back to: %s", host, "0.0.0.0")
@@ -32,6 +32,13 @@ func main() {
 		_ = fmt.Errorf("error: %s is not a valid port. Falling back to: %s", port, "8080")
 		port = "8080"
 	}
+
+	rs := os.Getenv("REFRESH_SECRET")
+	if rs == "" {
+		log.Print("REFRESH_SECRET value not set. Exiting...")
+		os.Exit(config.ExitNotImplemented)
+	}
+	config.RefreshSecret = rs
 
 	cache.InitCache()
 	defer cache.Client.Close()
@@ -58,19 +65,29 @@ func main() {
 
 func configureRouter() *gin.Engine {
 	r := gin.Default()
+	err := r.SetTrustedProxies(nil)
+	if err != nil {
+		log.Printf("failed to set trusted proxies: %s", err)
+		os.Exit(config.ExitCantCreate)
+	}
 
 	r.Use(cors.Default())
 
-	config := cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},
+	corsConfig := cors.Config{
+		AllowOrigins: []string{
+			"https://scribe-dev.realizesec.com",
+			"https://scribe-test.realizesec.com",
+			"https://scribe-stage.realizesec.com",
+			"https://scribe.realizesec.com",
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "RefreshToken", "Cookie"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		MaxAge:           12 * 60 * 60, // Maximum age (in seconds) of the preflight request
+		MaxAge:           12 * 60 * 60,
 	}
 
-	r.Use(cors.New(config))
+	r.Use(cors.New(corsConfig))
 
 	initialiseHandlers(r)
 	return r
@@ -80,8 +97,10 @@ func configureRouter() *gin.Engine {
 func initialiseHandlers(r *gin.Engine) {
 	handlers.ApiHealthCheckRoutes(&r.RouterGroup)
 
+	as := services.NewAuthenticationService()
+
 	ur := repositories.NewUserRepository(database.Db)
-	us := services.NewUserServiceRepository(ur)
+	us := services.NewUserServiceRepository(ur, as)
 	uh := handlers.NewUserHandler(us)
 
 	// Register routes
@@ -92,9 +111,7 @@ func migrate(db *gorm.DB) {
 	log.Println("Migrating database...")
 	err := db.AutoMigrate(
 		&entities.UserDBModel{},
-		//&entities.OrganisationDBModel{},
-		//&entities.RoleDBModel{},
-		//&entities.PermissionDBModel{}
+		&entities.OrganisationDBModel{},
 	)
 	if err != nil {
 		panic(err.Error())

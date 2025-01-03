@@ -1,7 +1,7 @@
 services:
 
-  nginx_scribe_api:
-    container_name: nginx_scribe_api
+  scribe_proxy:
+    container_name: scribe_proxy
     build:
       context: ./nginx
       args:
@@ -12,22 +12,17 @@ services:
       - "443:443"
     networks:
       - scribe_api
+      - scribe_ui
     depends_on:
       - scribe_api
     volumes:
-      - scribe_nginx_logging:/vol/log/nginx
+      - scribe_proxy_logs:/vol/log/nginx
 
   scribe_api:
     container_name: scribe_api
     build:
       context: api
       dockerfile: Dockerfile.dev
-    environment:
-      - ADDR=0.0.0.0
-      - PORT=8080
-      - GO_ENV=development
-      - CGO_ENABLED=0
-      - GIN_MODE=debug
     ports:
       - "8080:8080"
       - "8000:8000"
@@ -45,7 +40,9 @@ services:
       - ./api:/go/src/api
     env_file:
       - ./db-variables-dev.env
+      - ./api-variables-dev.env
       - ./cache-variables.env
+      - ./common-api-variables.env
     depends_on:
       - scribe_postgres
 
@@ -81,12 +78,14 @@ services:
 volumes:
   scribe_postgres_data:
   scribe_api:
-  scribe_nginx_logging:
+  scribe_proxy_logs:
 
 
 networks:
   scribe_api:
     driver: bridge
+  scribe_ui:
+    external: true
   scribe_postgres:
     driver: bridge
   scribe_cache:

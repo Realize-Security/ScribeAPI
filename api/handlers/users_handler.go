@@ -19,5 +19,6 @@ func (uh UserHandler) Users(r *gin.RouterGroup) {
 	users := r.Group("/api/users")
 	{
 		users.POST("/register", uh.us.RegisterUser)
+		users.POST("/login", uh.us.Login)
 	}
 }

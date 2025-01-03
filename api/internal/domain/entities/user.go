@@ -2,10 +2,10 @@ package entities
 
 import (
 	"errors"
+	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
 
-// UserDBModel contains the common fields for all user
 type UserDBModel struct {
 	Base
 	FirstName               string              `gorm:"column:first_name;type:varchar(255);not null"`
@@ -20,6 +20,10 @@ type UserDBModel struct {
 	OrganisationID          string              `gorm:"column:organisation_id;type:varchar(255);default:NULL"`
 	Organisation            OrganisationDBModel `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;default:NULL"`
 	//Roles                   []RoleDBModel       `gorm:"many2many:user_roles;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+}
+
+func (u *UserDBModel) TableName() string {
+	return "users"
 }
 
 func (u *UserDBModel) BeforeSave(tx *gorm.DB) error {
@@ -40,4 +44,14 @@ type UserRegistration struct {
 	Password        string `json:"password" validate:"required,validate_password,eqfield=ConfirmPassword"`
 	ConfirmPassword string `json:"confirmPassword" validate:"required"`
 	TermsAccepted   bool   `json:"termsAccepted,default:false" validate:"required"`
+}
+
+type UserLogin struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
+type JWTCustomClaims struct {
+	UserID string
+	jwt.RegisteredClaims
 }
