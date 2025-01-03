@@ -12,6 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -22,6 +23,7 @@ type AuthenticationRepository interface {
 	PasswordsMatch(hashed, plain string) bool
 	HashPassword(pwd string) (string, error)
 	GenerateAuthToken(userUUID string) (*entities.AuthSet, error)
+	LoginUser(token *entities.AuthSet, c *gin.Context) error
 	TokenClaimsFromRequestAndValidate(c *gin.Context) (entities.JWTCustomClaims, error)
 	GetClaimsFromContext(c *gin.Context) (entities.JWTCustomClaims, error)
 	GenerateRefreshToken(userID string) (string, error)
@@ -305,4 +307,30 @@ func validateRequestToken(c *gin.Context) error {
 // GetClaimsFromContext returns entities.JWTCustomClaims from a request context. This does NOT validate the token.
 func (auth *AuthenticationService) GetClaimsFromContext(c *gin.Context) (entities.JWTCustomClaims, error) {
 	return tokenClaimsFromRequestNoValidate(c)
+}
+
+func (auth *AuthenticationService) LoginUser(token *entities.AuthSet, c *gin.Context) error {
+	if token == nil {
+		return errors.New("token AuthSet is nil")
+	}
+	if c == nil {
+		return errors.New("gin context is nil")
+	}
+	secure := secureCookies()
+	domain := cookieDomain()
+	c.SetCookie(config.CookieAuthToken, token.AuthToken, 3600, "/", domain, secure, true)
+	c.SetCookie(config.CookieRefreshToken, token.RefreshToken, 3600, "/", domain, secure, true)
+	c.SetCookie(config.CookieIsAuthenticated, "true", 3600, "/", domain, secure, false)
+	return nil
+}
+
+func secureCookies() bool {
+	if os.Getenv("GO_ENV") == "development" {
+		return false
+	}
+	return true
+}
+
+func cookieDomain() string {
+	return os.Getenv("COOKIE_DOMAIN")
 }

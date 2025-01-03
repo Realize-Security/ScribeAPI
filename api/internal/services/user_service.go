@@ -9,7 +9,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"log"
 	"net/http"
-	"os"
 )
 
 type UserService struct {
@@ -104,25 +103,18 @@ func (us *UserService) Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			config.ApiError: config.MessageInvalidCredentialsError,
 		})
+		return
+	}
+
+	err = us.ar.LoginUser(token, c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			config.ApiError: config.MessageInvalidCredentialsError,
+		})
+		return
 	} else {
 		log.Printf(config.LogLoginSuccess, user.UUID)
-		secure := secureCookies()
-		domain := cookieDomain()
-		c.SetCookie(config.CookieAuthToken, token.AuthToken, 3600, "/", domain, secure, true)
-		c.SetCookie(config.CookieRefreshToken, token.RefreshToken, 3600, "/", domain, secure, true)
-		c.SetCookie(config.CookieIsAuthenticated, "1", 3600, "/", domain, secure, false)
 		c.Writer.WriteHeader(http.StatusOK)
+		return
 	}
-	return
-}
-
-func secureCookies() bool {
-	if os.Getenv("GO_ENV") == "development" {
-		return false
-	}
-	return true
-}
-
-func cookieDomain() string {
-	return os.Getenv("COOKIE_DOMAIN")
 }
