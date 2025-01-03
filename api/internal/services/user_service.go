@@ -108,11 +108,10 @@ func (us *UserService) Login(c *gin.Context) {
 		log.Printf(config.LogLoginSuccess, user.UUID)
 		secure := secureCookies()
 		domain := cookieDomain()
-		c.SetCookie(config.ApiJwt, token.AuthToken, 3600, "/", domain, secure, true)
-		c.SetCookie(config.RefreshToken, token.RefreshToken, 3600, "/", domain, secure, true)
-		c.JSON(http.StatusOK, gin.H{
-			config.ApiMessage: token,
-		})
+		c.SetCookie(config.CookieAuthToken, token.AuthToken, 3600, "/", domain, secure, true)
+		c.SetCookie(config.CookieRefreshToken, token.RefreshToken, 3600, "/", domain, secure, true)
+		c.SetCookie(config.CookieIsAuthenticated, "1", 3600, "/", domain, secure, false)
+		c.Writer.WriteHeader(http.StatusOK)
 	}
 	return
 }

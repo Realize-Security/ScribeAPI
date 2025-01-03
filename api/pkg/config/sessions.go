@@ -3,8 +3,9 @@ package config
 import "time"
 
 const (
-	ApiJwt                                   = "auth_token"
-	RefreshToken                             = "refresh_token"
+	CookieAuthToken                          = "auth_token"
+	CookieRefreshToken                       = "refresh_token"
+	CookieIsAuthenticated                    = "is_authenticated"
 	JTI                                      = "jti"
 	HMACSecret                               = "secret"
 	LogBadSessionKeyAbort                    = "Insecure session key set. Aborting."

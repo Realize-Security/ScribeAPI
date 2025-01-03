@@ -118,7 +118,7 @@ func (auth *AuthenticationService) GenerateAuthToken(userUUID string) (*entities
 
 	rt, err := auth.GenerateRefreshToken(userUUID)
 	if err != nil {
-		log.Printf("unable to generate %s for: %s", config.RefreshToken, userUUID)
+		log.Printf("unable to generate %s for: %s", config.CookieRefreshToken, userUUID)
 		return nil, err
 	}
 

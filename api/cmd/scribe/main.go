@@ -81,7 +81,7 @@ func configureRouter() *gin.Engine {
 			"https://scribe.realizesec.com",
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "RefreshToken", "Cookie"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "CookieRefreshToken", "Cookie"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * 60 * 60,
