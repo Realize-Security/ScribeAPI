@@ -28,7 +28,6 @@ func NewCertManager() (*CertManager, error) {
 	if err := cm.ensureKeys(); err != nil {
 		return nil, err
 	}
-
 	return cm, nil
 }
 
