@@ -2,7 +2,6 @@ package entities
 
 import (
 	"errors"
-	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
 
@@ -49,9 +48,4 @@ type UserRegistration struct {
 type UserLogin struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
-}
-
-type JWTCustomClaims struct {
-	UserID string
-	jwt.RegisteredClaims
 }

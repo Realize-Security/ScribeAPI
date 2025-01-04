@@ -14,7 +14,7 @@ const (
 	LogUserDeleteFailed            = "failed to delete user: %s"
 	LogUserFindByEmailFailed       = "failed to find user with email: %s"
 	LogUserFindByEmailSuccess      = "user found with email: %s"
-	LogUserFindByIDFailed          = "failed to find user with UserID: %s"
-	LogUserFindByIDSuccess         = "user found with UserID: %s"
+	LogUserFindByIDFailed          = "failed to find user with UserUUID: %s"
+	LogUserFindByIDSuccess         = "user found with UserUUID: %s"
 	LogUserGetFromContextFailed    = "failed to get user from context"
 )

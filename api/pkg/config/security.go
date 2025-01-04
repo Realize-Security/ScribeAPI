@@ -1,11 +1,6 @@
 package config
 
-import "time"
-
-var RefreshSecret = "default"
-
 const (
-	LogUnauthorisedAccessAttempt = "unauthorised access attempt: %s"
-	MinPasswordLength            = 16
-	RefreshTokenExpiry           = time.Minute * 60
+	LogRefreshAndAuthTokenUIDMismatchAlert = "auth_token user: '%s' did not match refresh_token user: '%s'"
+	MinPasswordLength                      = 16
 )

@@ -33,13 +33,6 @@ func main() {
 		port = "8080"
 	}
 
-	rs := os.Getenv("REFRESH_SECRET")
-	if rs == "" {
-		log.Print("REFRESH_SECRET value not set. Exiting...")
-		os.Exit(config.ExitNotImplemented)
-	}
-	config.RefreshSecret = rs
-
 	cache.InitCache()
 	defer cache.Client.Close()
 
@@ -97,7 +90,11 @@ func configureRouter() *gin.Engine {
 func initialiseHandlers(r *gin.Engine) {
 	handlers.ApiHealthCheckRoutes(&r.RouterGroup)
 
-	as := services.NewAuthenticationService()
+	as, err := services.NewAuthenticationService()
+	if err != nil {
+		log.Printf("failed to initialise auth service: %s", err.Error())
+		os.Exit(config.ExitError)
+	}
 
 	ur := repositories.NewUserRepository(database.Db)
 	us := services.NewUserServiceRepository(ur, as)

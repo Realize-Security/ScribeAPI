@@ -3,42 +3,56 @@ package entities
 import "github.com/golang-jwt/jwt/v5"
 
 type AuthSet struct {
-	AuthToken    string `json:"auth_token"`
-	RefreshToken string `json:"refresh_token"`
-	JTI          string `json:"jti"`
+	AuthToken    string
+	RefreshToken string
+	JTI          string
 }
 
-type RefreshTokenClaims struct {
-	UserUUID  string           `json:"user_uuid"`
-	TokenID   string           `json:"token_id"`
-	ExpiresAt *jwt.NumericDate `json:"exp,omitempty"`
-	IssuedAt  *jwt.NumericDate `json:"iat,omitempty"`
-	NotBefore *jwt.NumericDate `json:"nbf,omitempty"`
-	Issuer    string           `json:"iss,omitempty"`
-	Subject   string           `json:"sub,omitempty"`
-	Audience  jwt.ClaimStrings `json:"aud,omitempty"`
+type JWTCustomClaims struct {
+	UserUUID string
+	TokenID  string
+	jwt.RegisteredClaims
 }
 
-func (c RefreshTokenClaims) GetExpirationTime() (*jwt.NumericDate, error) {
+type Claims interface {
+	GetUserUUID() (string, error)
+}
+
+//type JWTCustomClaims struct {
+//	UserUUID  string
+//	TokenID   string
+//	ExpiresAt *jwt.NumericDate
+//	IssuedAt  *jwt.NumericDate
+//	NotBefore *jwt.NumericDate
+//	Issuer    string
+//	Subject   string
+//	Audience  jwt.ClaimStrings
+//}
+
+func (c JWTCustomClaims) GetUserUUID() (string, error) {
+	return c.UserUUID, nil
+}
+
+func (c JWTCustomClaims) GetExpirationTime() (*jwt.NumericDate, error) {
 	return c.ExpiresAt, nil
 }
 
-func (c RefreshTokenClaims) GetIssuedAt() (*jwt.NumericDate, error) {
+func (c JWTCustomClaims) GetIssuedAt() (*jwt.NumericDate, error) {
 	return c.IssuedAt, nil
 }
 
-func (c RefreshTokenClaims) GetNotBefore() (*jwt.NumericDate, error) {
+func (c JWTCustomClaims) GetNotBefore() (*jwt.NumericDate, error) {
 	return c.NotBefore, nil
 }
 
-func (c RefreshTokenClaims) GetIssuer() (string, error) {
+func (c JWTCustomClaims) GetIssuer() (string, error) {
 	return c.Issuer, nil
 }
 
-func (c RefreshTokenClaims) GetSubject() (string, error) {
+func (c JWTCustomClaims) GetSubject() (string, error) {
 	return c.Subject, nil
 }
 
-func (c RefreshTokenClaims) GetAudience() (jwt.ClaimStrings, error) {
+func (c JWTCustomClaims) GetAudience() (jwt.ClaimStrings, error) {
 	return c.Audience, nil
 }

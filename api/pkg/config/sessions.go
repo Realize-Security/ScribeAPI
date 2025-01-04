@@ -3,13 +3,28 @@ package config
 import "time"
 
 const (
-	CookieAuthToken                          = "auth_token"
-	CookieRefreshToken                       = "refresh_token"
-	CookieIsAuthenticated                    = "is_authenticated"
-	JTI                                      = "jti"
-	HMACSecret                               = "secret"
+	CookieAuthToken       = "auth_token"
+	CookieRefreshToken    = "refresh_token"
+	CookieIsAuthenticated = "is_authenticated"
+
+	JTI              = "jti"
+	AuthKeySecret    = "auth_key_secret"
+	RefreshKeySecret = "refresh_key_secret"
+
+	DefaultKeyPath     = "./keys"
+	AuthPrivateKeyPath = DefaultKeyPath + "/auth_private.pem"
+	AuthPublicKeyPath  = DefaultKeyPath + "/auth_public.pem"
+	RefreshKeyPath     = DefaultKeyPath + "/refresh_secret"
+
+	RSAKeySize     = 2048
+	RefreshKeySize = 32
+
+	AuthTokenExpiry          = time.Minute * 20
+	AuthTokenCookieExpiry    = 1200
+	RefreshTokenExpiry       = time.Hour * 24 * 7
+	RefreshTokenCookieExpiry = 604800
+
 	LogBadSessionKeyAbort                    = "Insecure session key set. Aborting."
-	AuthorizationHeader                      = "Authorization"
 	LogAuthHeaderSuccess                     = "authorization header parsed successfully"
 	LogAuthHeaderNotFound                    = "authorization header not available"
 	LogAuthTokenCreateFailed                 = "error generating token"
@@ -18,11 +33,15 @@ const (
 	LogAuthTokenExtractUserDetailError       = "error extracting jwt user details"
 	LogAuthTokenLogoutError                  = "error logging out: %s"
 	LogAuthTokenLoggedOut                    = "successfully logged out: %s"
-	AuthTokenExpiry                          = time.Minute * 20
+	LogKeyGeneration                         = "generating new key pair at: %s"
+	LogKeyLoadError                          = "error loading keys: %s"
+	LogKeyGenerationError                    = "error generating keys: %s"
+	LogKeySaveError                          = "error saving keys: %s"
 	UnspecifiedError                         = "An unknown error occurred"
 	CacheSessionPermissionsKey               = "permissions"
 	LogLoginSuccess                          = "Successfully logged in: %s"
 	LogHashingError                          = "error hashing password"
 	LogHashingErrorForUser                   = "error hashing password for: %s"
 	LogHashesDontMatch                       = "hashes don't match"
+	LogExtractAuthCookiesError               = "error extracting auth tokens from cookie: %s"
 )
