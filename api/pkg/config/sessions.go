@@ -41,7 +41,7 @@ const (
 	CacheSessionPermissionsKey               = "permissions"
 	LogLoginSuccess                          = "Successfully logged in: %s"
 	LogHashingError                          = "error hashing password"
-	LogHashingErrorForUserEmail              = "password mismatch for user identifier: %s"
+	LogHashingErrorForLoginEmail             = "password mismatch for user identifier: %s"
 	LogHashingErrorForUserID                 = "error hashing password for: %d"
 	LogHashesDontMatch                       = "hashes don't match"
 	LogExtractAuthCookiesError               = "error extracting auth tokens from cookie: %s"
