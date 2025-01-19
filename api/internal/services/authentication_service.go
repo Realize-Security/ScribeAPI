@@ -25,6 +25,7 @@ type AuthenticationRepository interface {
 	HashPassword(pwd string) (string, error)
 	GenerateAuthToken(userID int) (*entities.AuthSet, error)
 	LoginUser(token *entities.AuthSet, c *gin.Context) error
+	LogoutUser(c *gin.Context) error
 	TokenClaimsFromRequestAndValidate(c *gin.Context) (entities.JWTCustomClaims, error)
 	GetCustomClaims(c *gin.Context) (entities.JWTCustomClaims, error)
 	GenerateRefreshToken(userID int) (string, error)
@@ -385,10 +386,14 @@ func setLoginCookies(token *entities.AuthSet, c *gin.Context, domain string, sec
 }
 
 func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
-	if c == nil {
-		return errors.New("gin context is nil")
+	claims, err := auth.TokenClaimsFromRequestAndValidate(c)
+	if err != nil {
+		log.Printf(config.LogLogoutTokenValidationFailed, err.Error())
+		return err
 	}
+
 	invalidateCookies(c, cookieDomain(), secureCookies())
+	log.Printf(config.LogLogoutUserSuccess, claims.UserID)
 	return nil
 }
 

@@ -20,5 +20,6 @@ func (uh UserHandler) Users(r *gin.RouterGroup) {
 	{
 		users.POST("/register", uh.us.RegisterUser)
 		users.POST("/login", uh.us.Login)
+		users.GET("/logout", uh.us.Logout)
 	}
 }

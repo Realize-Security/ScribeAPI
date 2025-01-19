@@ -256,3 +256,79 @@ func (s *AuthServiceTestSuite) TestTokenClaimsFromRequestAndValidate() {
 		assert.Empty(s.T(), claims.UserID)
 	})
 }
+
+func (s *AuthServiceTestSuite) TestLogoutUser() {
+	s.Run("successfully logs out user and invalidates cookies", func() {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		// Set up an authenticated user
+		userID := 1
+		authSet, err := s.auth.GenerateAuthToken(userID)
+		require.NoError(s.T(), err)
+
+		// Create test request with cookies
+		req := httptest.NewRequest("GET", "/api/logout", nil)
+		req.AddCookie(&http.Cookie{Name: config.CookieAuthToken, Value: authSet.AuthToken})
+		req.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: authSet.RefreshToken})
+		req.AddCookie(&http.Cookie{Name: config.CookieIsAuthenticated, Value: "true"})
+		c.Request = req
+
+		// Perform logout
+		err = s.auth.LogoutUser(c)
+
+		// Verify the results
+		assert.NoError(s.T(), err)
+
+		// Check that cookies were invalidated
+		cookies := w.Result().Cookies()
+		var foundAuthCookie, foundRefreshCookie, foundIsAuthCookie bool
+		for _, cookie := range cookies {
+			switch cookie.Name {
+			case config.CookieAuthToken:
+				assert.Equal(s.T(), "", cookie.Value)
+				assert.Equal(s.T(), 3600, cookie.MaxAge)
+				foundAuthCookie = true
+			case config.CookieRefreshToken:
+				assert.Equal(s.T(), "", cookie.Value)
+				assert.Equal(s.T(), 3600, cookie.MaxAge)
+				foundRefreshCookie = true
+			case config.CookieIsAuthenticated:
+				assert.Equal(s.T(), "false", cookie.Value)
+				assert.Equal(s.T(), 3600, cookie.MaxAge)
+				foundIsAuthCookie = true
+			}
+		}
+		assert.True(s.T(), foundAuthCookie, "Auth cookie should be present")
+		assert.True(s.T(), foundRefreshCookie, "Refresh cookie should be present")
+		assert.True(s.T(), foundIsAuthCookie, "IsAuthenticated cookie should be present")
+	})
+
+	s.Run("returns error when no auth cookies present", func() {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		req := httptest.NewRequest("GET", "/api/logout", nil)
+		c.Request = req
+
+		err := s.auth.LogoutUser(c)
+
+		assert.Error(s.T(), err)
+		assert.Contains(s.T(), err.Error(), config.LogExtractAuthCookiesError)
+	})
+
+	s.Run("returns error with invalid auth token", func() {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		req := httptest.NewRequest("GET", "/api/logout", nil)
+		req.AddCookie(&http.Cookie{Name: config.CookieAuthToken, Value: "invalid-token"})
+		req.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: "invalid-refresh-token"})
+		c.Request = req
+
+		err := s.auth.LogoutUser(c)
+
+		assert.Error(s.T(), err)
+		assert.Contains(s.T(), err.Error(), "token is malformed")
+	})
+}
