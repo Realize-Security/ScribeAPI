@@ -90,16 +90,16 @@ func (us *UserService) Login(c *gin.Context) {
 	}
 
 	if !us.ar.PasswordsMatch(user.Password, login.Password) {
-		log.Printf(config.LogHashingErrorForUser, user.Email)
+		log.Printf(config.LogHashingErrorForUserEmail, user.Email)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			config.ApiError: config.MessageInvalidCredentialsError,
 		})
 		return
 	}
 
-	token, err := us.ar.GenerateAuthToken(user.UUID)
+	token, err := us.ar.GenerateAuthToken(user.ID)
 	if err != nil {
-		log.Printf(config.LogHashingErrorForUser, user.UUID)
+		log.Printf(config.LogHashingErrorForUserID, user.ID)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			config.ApiError: config.MessageInvalidCredentialsError,
 		})

@@ -15,10 +15,10 @@ type JWTCustomClaims struct {
 }
 
 type Claims interface {
-	GetUserUUID() (string, error)
+	GetUserID() (string, error)
 }
 
-func (c JWTCustomClaims) GetUserUUID() (int, error) {
+func (c JWTCustomClaims) GetUserID() (int, error) {
 	return c.UserID, nil
 }
 

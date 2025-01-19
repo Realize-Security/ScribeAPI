@@ -23,13 +23,12 @@ type AuthenticationRepository interface {
 	IsAuthenticated() gin.HandlerFunc
 	PasswordsMatch(hashed, plain string) bool
 	HashPassword(pwd string) (string, error)
-	GenerateAuthToken(userUUID string) (*entities.AuthSet, error)
+	GenerateAuthToken(userID int) (*entities.AuthSet, error)
 	LoginUser(token *entities.AuthSet, c *gin.Context) error
 	TokenClaimsFromRequestAndValidate(c *gin.Context) (entities.JWTCustomClaims, error)
 	GetCustomClaims(c *gin.Context) (entities.JWTCustomClaims, error)
-	GenerateRefreshToken(userID string) (string, error)
-	ValidateRefreshToken(token string) (string, error)
-	RevokeRefreshToken(userID string) error
+	GenerateRefreshToken(userID int) (string, error)
+	ValidateRefreshToken(token string) (int, error)
 }
 
 type AuthenticationService struct {
@@ -295,12 +294,6 @@ func (auth *AuthenticationService) TokenClaimsFromRequestAndValidate(c *gin.Cont
 		return e, err
 	}
 	return claims, nil
-}
-
-func (auth *AuthenticationService) RevokeRefreshToken(userUUID string) error {
-	// Implementation depends on your storage mechanism
-	// Could update user in database to clear refresh token
-	return nil
 }
 
 func tokenClaimsFromRequestNoValidate(c *gin.Context) (entities.JWTCustomClaims, error) {
