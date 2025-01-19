@@ -397,11 +397,11 @@ func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
 	if c == nil {
 		return errors.New("gin context is nil")
 	}
-	nullifyCookies(c, cookieDomain(), secureCookies())
+	invalidateCookies(c, cookieDomain(), secureCookies())
 	return nil
 }
 
-func nullifyCookies(c *gin.Context, domain string, secure bool) {
+func invalidateCookies(c *gin.Context, domain string, secure bool) {
 	c.SetCookie(config.CookieAuthToken, "", 3600, "/", domain, secure, true)
 	c.SetCookie(config.CookieRefreshToken, "", 3600, "/", domain, secure, true)
 	c.SetCookie(config.CookieIsAuthenticated, "false", 3600, "/", domain, secure, false)
