@@ -9,8 +9,8 @@ type AuthSet struct {
 }
 
 type JWTCustomClaims struct {
-	UserUUID string
-	TokenID  string
+	UserID  int
+	TokenID string
 	jwt.RegisteredClaims
 }
 
@@ -18,19 +18,8 @@ type Claims interface {
 	GetUserUUID() (string, error)
 }
 
-//type JWTCustomClaims struct {
-//	UserUUID  string
-//	TokenID   string
-//	ExpiresAt *jwt.NumericDate
-//	IssuedAt  *jwt.NumericDate
-//	NotBefore *jwt.NumericDate
-//	Issuer    string
-//	Subject   string
-//	Audience  jwt.ClaimStrings
-//}
-
-func (c JWTCustomClaims) GetUserUUID() (string, error) {
-	return c.UserUUID, nil
+func (c JWTCustomClaims) GetUserUUID() (int, error) {
+	return c.UserID, nil
 }
 
 func (c JWTCustomClaims) GetExpirationTime() (*jwt.NumericDate, error) {

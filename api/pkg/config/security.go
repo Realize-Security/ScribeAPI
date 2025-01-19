@@ -1,6 +1,6 @@
 package config
 
 const (
-	LogRefreshAndAuthTokenUIDMismatchAlert = "auth_token user: '%s' did not match refresh_token user: '%s'"
+	LogRefreshAndAuthTokenUIDMismatchAlert = "auth_token user: '%d' did not match refresh_token user: '%d'"
 	MinPasswordLength                      = 16
 )
