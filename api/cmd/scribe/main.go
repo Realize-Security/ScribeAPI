@@ -98,7 +98,7 @@ func initialiseHandlers(r *gin.Engine) {
 
 	ur := repositories.NewUserRepository(database.Db)
 	us := services.NewUserServiceRepository(ur, as)
-	uh := handlers.NewUserHandler(us)
+	uh := handlers.NewUserHandler(us, as)
 
 	// Register routes
 	uh.Users(&r.RouterGroup)
