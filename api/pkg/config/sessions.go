@@ -40,8 +40,12 @@ const (
 	UnspecifiedError                         = "An unknown error occurred"
 	CacheSessionPermissionsKey               = "permissions"
 	LogLoginSuccess                          = "Successfully logged in: %s"
+	LogLogoutFailed                          = "failed to logout user: '%d' with error: '%s'"
+	LogLogoutTokenValidationFailed           = "failed to validate token for logout: %s"
+	LogLogoutUserSuccess                     = "logged out user: %d"
 	LogHashingError                          = "error hashing password"
-	LogHashingErrorForUser                   = "error hashing password for: %s"
+	LogHashingErrorForLoginEmail             = "password mismatch for user identifier: %s"
+	LogHashingErrorForUserID                 = "error hashing password for: %d"
 	LogHashesDontMatch                       = "hashes don't match"
 	LogExtractAuthCookiesError               = "error extracting auth tokens from cookie: %s"
 )

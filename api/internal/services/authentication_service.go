@@ -23,13 +23,13 @@ type AuthenticationRepository interface {
 	IsAuthenticated() gin.HandlerFunc
 	PasswordsMatch(hashed, plain string) bool
 	HashPassword(pwd string) (string, error)
-	GenerateAuthToken(userUUID string) (*entities.AuthSet, error)
+	GenerateAuthToken(userID int) (*entities.AuthSet, error)
 	LoginUser(token *entities.AuthSet, c *gin.Context) error
+	LogoutUser(c *gin.Context) error
 	TokenClaimsFromRequestAndValidate(c *gin.Context) (entities.JWTCustomClaims, error)
 	GetCustomClaims(c *gin.Context) (entities.JWTCustomClaims, error)
-	GenerateRefreshToken(userID string) (string, error)
-	ValidateRefreshToken(token string) (string, error)
-	RevokeRefreshToken(userID string) error
+	GenerateRefreshToken(userID int) (string, error)
+	ValidateRefreshToken(token string) (int, error)
 }
 
 type AuthenticationService struct {
@@ -102,12 +102,10 @@ func (auth *AuthenticationService) HashPassword(pwd string) (string, error) {
 	return hash, nil
 }
 
-func (auth *AuthenticationService) GenerateAuthToken(userUUID string) (*entities.AuthSet, error) {
-	_, e := uuid.FromString(userUUID)
-	if e != nil {
-		return nil, fmt.Errorf("invalid UUID format: %w", e)
+func (auth *AuthenticationService) GenerateAuthToken(userID int) (*entities.AuthSet, error) {
+	if userID < 0 {
+		return nil, fmt.Errorf("invalid user ID value: %d", userID)
 	}
-
 	generator := new(SessionTokenGenerator)
 	jti, err := generator.createJtiSessionValue()
 	if err != nil {
@@ -119,7 +117,7 @@ func (auth *AuthenticationService) GenerateAuthToken(userUUID string) (*entities
 	}
 
 	claims := entities.JWTCustomClaims{
-		UserUUID: userUUID,
+		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(config.AuthTokenExpiry)),
@@ -137,7 +135,7 @@ func (auth *AuthenticationService) GenerateAuthToken(userUUID string) (*entities
 		return nil, fmt.Errorf("failed to sign auth token: %w", err)
 	}
 
-	rt, err := auth.GenerateRefreshToken(userUUID)
+	rt, err := auth.GenerateRefreshToken(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
@@ -149,10 +147,10 @@ func (auth *AuthenticationService) GenerateAuthToken(userUUID string) (*entities
 	}, nil
 }
 
-func (auth *AuthenticationService) GenerateRefreshToken(userUUID string) (string, error) {
+func (auth *AuthenticationService) GenerateRefreshToken(userID int) (string, error) {
 	claims := entities.JWTCustomClaims{
-		UserUUID: userUUID,
-		TokenID:  uuid.Must(uuid.NewV4()).String(),
+		UserID:  userID,
+		TokenID: uuid.Must(uuid.NewV4()).String(),
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(config.RefreshTokenExpiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -184,7 +182,7 @@ func validateTokenSignature(auth *AuthenticationService, tokenString string) (jw
 	return *token, nil
 }
 
-func (auth *AuthenticationService) ValidateRefreshToken(tokenString string) (string, error) {
+func (auth *AuthenticationService) ValidateRefreshToken(tokenString string) (int, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &entities.JWTCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -193,19 +191,19 @@ func (auth *AuthenticationService) ValidateRefreshToken(tokenString string) (str
 	})
 
 	if err != nil {
-		return "", fmt.Errorf("failed to parse refresh token: %w", err)
+		return -1, fmt.Errorf("failed to parse refresh token: %w", err)
 	}
 
 	claims, ok := token.Claims.(*entities.JWTCustomClaims)
 	if !ok || !token.Valid {
-		return "", fmt.Errorf("invalid refresh token claims")
+		return -1, fmt.Errorf("invalid refresh token claims")
 	}
 
 	if time.Now().After(claims.ExpiresAt.Time) {
-		return "", fmt.Errorf("refresh token has expired")
+		return -1, fmt.Errorf("refresh token has expired")
 	}
 
-	return claims.UserUUID, nil
+	return claims.UserID, nil
 }
 
 // createJtiSessionValue generates a 32-byte value for use as the 'jti' - RFC 7519
@@ -266,13 +264,13 @@ func extractClaimsFromToken(token *jwt.Token) (entities.JWTCustomClaims, error) 
 	claims, ok := token.Claims.(*entities.JWTCustomClaims)
 	if ok && token.Valid {
 		return entities.JWTCustomClaims{
-			UserUUID: claims.UserUUID,
+			UserID: claims.UserID,
 			RegisteredClaims: jwt.RegisteredClaims{
 				IssuedAt:  claims.IssuedAt,
 				ExpiresAt: claims.ExpiresAt,
 				NotBefore: claims.NotBefore,
 				Issuer:    claims.Issuer,
-				ID:        claims.UserUUID,
+				ID:        claims.ID,
 			},
 		}, nil
 	}
@@ -297,12 +295,6 @@ func (auth *AuthenticationService) TokenClaimsFromRequestAndValidate(c *gin.Cont
 		return e, err
 	}
 	return claims, nil
-}
-
-func (auth *AuthenticationService) RevokeRefreshToken(userUUID string) error {
-	// Implementation depends on your storage mechanism
-	// Could update user in database to clear refresh token
-	return nil
 }
 
 func tokenClaimsFromRequestNoValidate(c *gin.Context) (entities.JWTCustomClaims, error) {
@@ -351,8 +343,8 @@ func (auth *AuthenticationService) authCookiesValid(c *gin.Context) (bool, error
 		return false, errors.New("failed to parse auth token claims")
 	}
 
-	if atClaims.UserUUID != userUUID {
-		errS := fmt.Sprintf(config.LogRefreshAndAuthTokenUIDMismatchAlert, atClaims.UserUUID, userUUID)
+	if atClaims.UserID != userUUID {
+		errS := fmt.Sprintf(config.LogRefreshAndAuthTokenUIDMismatchAlert, atClaims.UserID, userUUID)
 		log.Printf(errS)
 		return false, errors.New(errS)
 	}
@@ -394,10 +386,14 @@ func setLoginCookies(token *entities.AuthSet, c *gin.Context, domain string, sec
 }
 
 func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
-	if c == nil {
-		return errors.New("gin context is nil")
+	claims, err := auth.TokenClaimsFromRequestAndValidate(c)
+	if err != nil {
+		log.Printf(config.LogLogoutTokenValidationFailed, err.Error())
+		return err
 	}
+
 	invalidateCookies(c, cookieDomain(), secureCookies())
+	log.Printf(config.LogLogoutUserSuccess, claims.UserID)
 	return nil
 }
 
