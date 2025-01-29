@@ -112,10 +112,6 @@ func (auth *AuthenticationService) GenerateAuthToken(userID int) (*entities.Auth
 		return nil, fmt.Errorf("failed to create session value: %w", err)
 	}
 
-	if !jtiTokenIsValid(jti) {
-		return nil, fmt.Errorf("generated JTI token is invalid")
-	}
-
 	claims := entities.JWTCustomClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -217,14 +213,6 @@ func (stg *SessionTokenGenerator) createJtiSessionValue() (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(b), nil
-}
-
-func jtiTokenIsValid(jti string) bool {
-	if len(jti) < 64 {
-		log.Printf("generated jti was too short: %s", jti)
-		return false
-	}
-	return true
 }
 
 // extractAuthCookies receives a user request and extracts the auth and refresh tokens from cookies.
