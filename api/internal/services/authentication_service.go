@@ -287,9 +287,9 @@ func (auth *AuthenticationService) TokenClaimsFromRequestAndValidate(c *gin.Cont
 
 func tokenClaimsFromRequestNoValidate(c *gin.Context) (entities.JWTCustomClaims, error) {
 	e := entities.JWTCustomClaims{}
-	as, pErr := extractAuthCookies(c)
-	if pErr != nil {
-		return e, pErr
+	as, err := extractAuthCookies(c)
+	if err != nil {
+		return e, err
 	}
 	t, err := extractTokenFromString(as.AuthToken)
 	if err != nil {
@@ -301,19 +301,19 @@ func tokenClaimsFromRequestNoValidate(c *gin.Context) (entities.JWTCustomClaims,
 
 // authCookiesValid validates session cookies and reissues if auth/refresh values are valid.
 func (auth *AuthenticationService) authCookiesValid(c *gin.Context) (bool, error) {
-	authSet, err := extractAuthCookies(c)
+	ac, err := extractAuthCookies(c)
 	if err != nil {
 		return false, err
 	}
 
 	// Try to validate the auth token first
-	_, err = validateTokenSignature(auth, authSet.AuthToken)
+	_, err = validateTokenSignature(auth, ac.AuthToken)
 	if err == nil {
 		return true, nil
 	}
 
 	// If auth token is invalid, try to validate the refresh token
-	userUUID, err := auth.ValidateRefreshToken(authSet.RefreshToken)
+	userUUID, err := auth.ValidateRefreshToken(ac.RefreshToken)
 	if err != nil {
 		return false, err
 	}
@@ -321,7 +321,7 @@ func (auth *AuthenticationService) authCookiesValid(c *gin.Context) (bool, error
 	// If we got here, the refresh token is valid but the auth token isn't
 	// Check that the invalid auth token was for the same user
 	parser := jwt.NewParser()
-	at, _, err := parser.ParseUnverified(authSet.AuthToken, &entities.JWTCustomClaims{})
+	at, _, err := parser.ParseUnverified(ac.AuthToken, &entities.JWTCustomClaims{})
 	if err != nil {
 		return false, err
 	}
@@ -343,11 +343,7 @@ func (auth *AuthenticationService) authCookiesValid(c *gin.Context) (bool, error
 		return false, err
 	}
 
-	err = auth.LoginUser(newAuthSet, c)
-	if err != nil {
-		return false, err
-	}
-
+	setLoginCookies(newAuthSet, c, cookieDomain(), secureCookies())
 	return true, nil
 }
 
