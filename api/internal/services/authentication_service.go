@@ -27,7 +27,6 @@ type AuthenticationRepository interface {
 	LoginUser(token *entities.AuthSet, c *gin.Context) error
 	LogoutUser(c *gin.Context) error
 	TokenClaimsFromRequestAndValidate(c *gin.Context) (entities.JWTCustomClaims, error)
-	GetCustomClaims(c *gin.Context) (entities.JWTCustomClaims, error)
 	GenerateRefreshToken(userID int) (string, error)
 	ValidateRefreshToken(token string) (int, error)
 }
@@ -285,20 +284,6 @@ func (auth *AuthenticationService) TokenClaimsFromRequestAndValidate(c *gin.Cont
 	return claims, nil
 }
 
-func tokenClaimsFromRequestNoValidate(c *gin.Context) (entities.JWTCustomClaims, error) {
-	e := entities.JWTCustomClaims{}
-	as, err := extractAuthCookies(c)
-	if err != nil {
-		return e, err
-	}
-	t, err := extractTokenFromString(as.AuthToken)
-	if err != nil {
-		return e, err
-	}
-	claims, err := extractClaimsFromToken(&t)
-	return claims, nil
-}
-
 // authCookiesValid validates session cookies and reissues if auth/refresh values are valid.
 func (auth *AuthenticationService) authCookiesValid(c *gin.Context) (bool, error) {
 	ac, err := extractAuthCookies(c)
@@ -345,11 +330,6 @@ func (auth *AuthenticationService) authCookiesValid(c *gin.Context) (bool, error
 
 	setLoginCookies(newAuthSet, c, cookieDomain(), secureCookies())
 	return true, nil
-}
-
-// GetCustomClaims returns entities.JWTCustomClaims from a request context. This does NOT validate the token.
-func (auth *AuthenticationService) GetCustomClaims(c *gin.Context) (entities.JWTCustomClaims, error) {
-	return tokenClaimsFromRequestNoValidate(c)
 }
 
 func (auth *AuthenticationService) LoginUser(token *entities.AuthSet, c *gin.Context) error {
