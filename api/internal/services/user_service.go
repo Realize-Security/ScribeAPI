@@ -5,6 +5,7 @@ import (
 	"Scribe/internal/domain/repositories"
 	"Scribe/internal/domain/validators"
 	"Scribe/pkg/config"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"log"
@@ -34,7 +35,8 @@ func (us *UserService) RegisterUser(c *gin.Context) {
 
 	err = validators.Validator.Struct(&newUser)
 	if err != nil {
-		errs := err.(validator.ValidationErrors)
+		var errs validator.ValidationErrors
+		errors.As(err, &errs)
 		for _, v := range errs {
 			println(v.Error())
 		}
