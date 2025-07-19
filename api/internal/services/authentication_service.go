@@ -234,18 +234,6 @@ func extractAuthCookies(c *gin.Context) (*entities.AuthSet, error) {
 	return authSet, nil
 }
 
-// extractTokenFromString extracts claims from a token string but does NOT validate the signature
-func extractTokenFromString(tokenString string) (jwt.Token, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &entities.JWTCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(config.AuthKeySecret), nil
-	})
-	if err != nil {
-		log.Printf(err.Error())
-		return jwt.Token{}, err
-	}
-	return *token, nil
-}
-
 // extractClaimsFromToken extracts metadata from a token
 func extractClaimsFromToken(token *jwt.Token) (entities.JWTCustomClaims, error) {
 	claims, ok := token.Claims.(*entities.JWTCustomClaims)
@@ -344,9 +332,9 @@ func (auth *AuthenticationService) LoginUser(token *entities.AuthSet, c *gin.Con
 }
 
 func setLoginCookies(token *entities.AuthSet, c *gin.Context, domain string, secure bool) {
-	c.SetCookie(config.CookieAuthToken, token.AuthToken, config.AuthTokenCookieExpiry, "/", domain, secure, true)
-	c.SetCookie(config.CookieRefreshToken, token.RefreshToken, config.RefreshTokenCookieExpiry, "/", domain, secure, true)
-	c.SetCookie(config.UnsafeCookieIsAuthenticated, "true", config.RefreshTokenCookieExpiry, "/", domain, secure, false)
+	setCookieValue(c, config.CookieAuthToken, token.AuthToken, "/", domain, secure, true)
+	setCookieValue(c, config.CookieAuthToken, token.RefreshToken, "/", domain, secure, true)
+	setCookieValue(c, config.UnsafeCookieIsAuthenticated, "true", "/", domain, secure, false)
 }
 
 func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
@@ -362,9 +350,22 @@ func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
 }
 
 func invalidateCookies(c *gin.Context, domain string, secure bool) {
-	c.SetCookie(config.CookieAuthToken, "", 3600, "/", domain, secure, true)
-	c.SetCookie(config.CookieRefreshToken, "", 3600, "/", domain, secure, true)
-	c.SetCookie(config.UnsafeCookieIsAuthenticated, "false", 3600, "/", domain, secure, false)
+	setCookieValue(c, config.CookieAuthToken, "", "/", domain, secure, true)
+	setCookieValue(c, config.CookieAuthToken, "", "/", domain, secure, true)
+	setCookieValue(c, config.UnsafeCookieIsAuthenticated, "false", "/", domain, secure, false)
+}
+
+func setCookieValue(c *gin.Context, key, value, path, domain string, secure, httponly bool) {
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     key,
+		Value:    value,
+		MaxAge:   3600,
+		Path:     path,
+		Domain:   domain,
+		Secure:   secure,
+		HttpOnly: httponly,
+		SameSite: http.SameSiteStrictMode,
+	})
 }
 
 func secureCookies() bool {
