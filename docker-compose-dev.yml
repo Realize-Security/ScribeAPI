@@ -62,19 +62,6 @@ services:
       - ./db-variables-dev.env
 
 
-  scribe_cache:
-    container_name: scribe_cache
-    image: valkey/valkey:7.2.6-alpine3.20
-    restart: unless-stopped
-    user: valkey
-    ports:
-      - "6379:6379"
-    networks:
-      - scribe_cache
-    volumes:
-      - ./valkey/:/usr/local/etc/valkey
-
-
 volumes:
   scribe_postgres_data:
   scribe_api:
@@ -87,6 +74,4 @@ networks:
   scribe_ui:
     external: true
   scribe_postgres:
-    driver: bridge
-  scribe_cache:
     driver: bridge
