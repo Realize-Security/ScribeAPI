@@ -5,7 +5,6 @@ import (
 	"Scribe/internal/domain/entities"
 	"Scribe/internal/domain/repositories"
 	"Scribe/internal/domain/validators"
-	"Scribe/internal/infrastructure/cache"
 	"Scribe/internal/infrastructure/database"
 	"Scribe/internal/services"
 	"Scribe/pkg/config"
@@ -32,9 +31,6 @@ func main() {
 		_ = fmt.Errorf("error: %s is not a valid port. Falling back to: %s", port, "8080")
 		port = "8080"
 	}
-
-	cache.InitCache()
-	defer cache.Client.Close()
 
 	dbConf := database.Config{
 		MaxIdle:             config.DBMaxIdleConnectionsValue,
