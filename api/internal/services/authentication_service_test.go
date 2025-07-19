@@ -287,11 +287,11 @@ func (s *AuthServiceTestSuite) TestLogoutUser() {
 			switch cookie.Name {
 			case config.CookieAuthToken:
 				assert.Equal(s.T(), "", cookie.Value)
-				assert.Equal(s.T(), 3600, cookie.MaxAge)
+				assert.Equal(s.T(), 0, cookie.MaxAge)
 				foundAuthCookie = true
 			case config.CookieRefreshToken:
 				assert.Equal(s.T(), "", cookie.Value)
-				assert.Equal(s.T(), 3600, cookie.MaxAge)
+				assert.Equal(s.T(), 0, cookie.MaxAge)
 				foundRefreshCookie = true
 			case config.UnsafeCookieIsAuthenticated:
 				assert.Equal(s.T(), "false", cookie.Value)

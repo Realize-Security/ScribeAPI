@@ -332,9 +332,9 @@ func (auth *AuthenticationService) LoginUser(token *entities.AuthSet, c *gin.Con
 }
 
 func setLoginCookies(token *entities.AuthSet, c *gin.Context, domain string, secure bool) {
-	setCookieValue(c, config.CookieAuthToken, token.AuthToken, "/", domain, secure, true)
-	setCookieValue(c, config.CookieAuthToken, token.RefreshToken, "/", domain, secure, true)
-	setCookieValue(c, config.UnsafeCookieIsAuthenticated, "true", "/", domain, secure, false)
+	setCookieValue(c, config.CookieAuthToken, token.AuthToken, "/", domain, int(config.AuthTokenExpiry.Seconds()), secure, true)
+	setCookieValue(c, config.CookieRefreshToken, token.RefreshToken, "/", domain, int(config.RefreshTokenExpiry.Seconds()), secure, true)
+	setCookieValue(c, config.UnsafeCookieIsAuthenticated, "true", "/", domain, int(config.RefreshTokenExpiry.Seconds()), secure, false)
 }
 
 func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
@@ -350,20 +350,20 @@ func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
 }
 
 func invalidateCookies(c *gin.Context, domain string, secure bool) {
-	setCookieValue(c, config.CookieAuthToken, "", "/", domain, secure, true)
-	setCookieValue(c, config.CookieAuthToken, "", "/", domain, secure, true)
-	setCookieValue(c, config.UnsafeCookieIsAuthenticated, "false", "/", domain, secure, false)
+	setCookieValue(c, config.CookieAuthToken, "", "/", domain, 0, secure, true)
+	setCookieValue(c, config.CookieRefreshToken, "", "/", domain, 0, secure, true)
+	setCookieValue(c, config.UnsafeCookieIsAuthenticated, "false", "/", domain, 3600, secure, false)
 }
 
-func setCookieValue(c *gin.Context, key, value, path, domain string, secure, httponly bool) {
+func setCookieValue(c *gin.Context, key, value, path, domain string, maxAge int, secure, httpOnly bool) {
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     key,
 		Value:    value,
-		MaxAge:   3600,
+		MaxAge:   maxAge,
 		Path:     path,
 		Domain:   domain,
 		Secure:   secure,
-		HttpOnly: httponly,
+		HttpOnly: httpOnly,
 		SameSite: http.SameSiteStrictMode,
 	})
 }

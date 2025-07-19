@@ -23,10 +23,8 @@ const (
 	RSAKeySize     = 2048
 	RefreshKeySize = 32
 
-	AuthTokenExpiry          = time.Minute * 20
-	AuthTokenCookieExpiry    = 1200
-	RefreshTokenExpiry       = time.Hour * 24 * 7
-	RefreshTokenCookieExpiry = 604800
+	AuthTokenExpiry    = time.Minute * 20
+	RefreshTokenExpiry = time.Hour * 24 * 7
 
 	LogBadSessionKeyAbort                    = "Insecure session key set. Aborting."
 	LogAuthHeaderSuccess                     = "authorization header parsed successfully"
