@@ -346,7 +346,7 @@ func (auth *AuthenticationService) LoginUser(token *entities.AuthSet, c *gin.Con
 func setLoginCookies(token *entities.AuthSet, c *gin.Context, domain string, secure bool) {
 	c.SetCookie(config.CookieAuthToken, token.AuthToken, config.AuthTokenCookieExpiry, "/", domain, secure, true)
 	c.SetCookie(config.CookieRefreshToken, token.RefreshToken, config.RefreshTokenCookieExpiry, "/", domain, secure, true)
-	c.SetCookie(config.CookieIsAuthenticated, "true", config.RefreshTokenCookieExpiry, "/", domain, secure, false)
+	c.SetCookie(config.UnsafeCookieIsAuthenticated, "true", config.RefreshTokenCookieExpiry, "/", domain, secure, false)
 }
 
 func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
@@ -364,7 +364,7 @@ func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
 func invalidateCookies(c *gin.Context, domain string, secure bool) {
 	c.SetCookie(config.CookieAuthToken, "", 3600, "/", domain, secure, true)
 	c.SetCookie(config.CookieRefreshToken, "", 3600, "/", domain, secure, true)
-	c.SetCookie(config.CookieIsAuthenticated, "false", 3600, "/", domain, secure, false)
+	c.SetCookie(config.UnsafeCookieIsAuthenticated, "false", 3600, "/", domain, secure, false)
 }
 
 func secureCookies() bool {

@@ -271,7 +271,7 @@ func (s *AuthServiceTestSuite) TestLogoutUser() {
 		req := httptest.NewRequest("GET", "/api/logout", nil)
 		req.AddCookie(&http.Cookie{Name: config.CookieAuthToken, Value: authSet.AuthToken})
 		req.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: authSet.RefreshToken})
-		req.AddCookie(&http.Cookie{Name: config.CookieIsAuthenticated, Value: "true"})
+		req.AddCookie(&http.Cookie{Name: config.UnsafeCookieIsAuthenticated, Value: "true"})
 		c.Request = req
 
 		// Perform logout
@@ -293,7 +293,7 @@ func (s *AuthServiceTestSuite) TestLogoutUser() {
 				assert.Equal(s.T(), "", cookie.Value)
 				assert.Equal(s.T(), 3600, cookie.MaxAge)
 				foundRefreshCookie = true
-			case config.CookieIsAuthenticated:
+			case config.UnsafeCookieIsAuthenticated:
 				assert.Equal(s.T(), "false", cookie.Value)
 				assert.Equal(s.T(), 3600, cookie.MaxAge)
 				foundIsAuthCookie = true

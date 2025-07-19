@@ -3,9 +3,13 @@ package config
 import "time"
 
 const (
-	CookieAuthToken       = "auth_token"
-	CookieRefreshToken    = "refresh_token"
-	CookieIsAuthenticated = "is_authenticated"
+	// CookieAuthToken is the primary authentication token containing the user's JWT
+	CookieAuthToken = "auth_token"
+	// CookieRefreshToken primary refresh token for ensuring user stays authenticated when JWT expires and refresh token has not
+	CookieRefreshToken = "refresh_token"
+	// UnsafeCookieIsAuthenticated referenced purely by the user interface to manage rendering of authenticated and unauthenticated views
+	// NOT used for man aging access to authenticated server-side data.
+	UnsafeCookieIsAuthenticated = "is_authenticated"
 
 	JTI              = "jti"
 	AuthKeySecret    = "auth_key_secret"
