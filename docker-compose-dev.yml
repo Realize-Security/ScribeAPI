@@ -1,23 +1,5 @@
 services:
 
-  scribe_proxy:
-    container_name: scribe_proxy
-    build:
-      context: ./nginx
-      args:
-        - DEPLOY_ENV=DEV
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    networks:
-      - scribe_api
-      - scribe_ui
-    depends_on:
-      - scribe_api
-    volumes:
-      - scribe_proxy_logs:/vol/log/nginx
-
   scribe_api:
     container_name: scribe_api
     build:
@@ -30,7 +12,6 @@ services:
     networks:
       - scribe_api
       - scribe_postgres
-      - scribe_cache
     security_opt:
       - "seccomp:unconfined"
     cap_add:
@@ -65,13 +46,10 @@ services:
 volumes:
   scribe_postgres_data:
   scribe_api:
-  scribe_proxy_logs:
 
 
 networks:
   scribe_api:
     driver: bridge
-  scribe_ui:
-    external: true
   scribe_postgres:
     driver: bridge

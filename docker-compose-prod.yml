@@ -1,22 +1,5 @@
 services:
 
-  nginx_scribe_api:
-    container_name: nginx_scribe_api
-    build:
-      context: ./nginx
-      args:
-        - DEPLOY_ENV=PROD
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    networks:
-      - scribe_api
-    depends_on:
-      - scribe_api
-    volumes:
-      - scribe_nginx_logging:/vol/log/nginx
-
   scribe_api:
     container_name: scribe_api
     build:
@@ -46,7 +29,6 @@ services:
       - ./db-variables-dev.env
 
 volumes:
-  scribe_nginx_logging:
   scribe_postgres_data:
 
 networks:
