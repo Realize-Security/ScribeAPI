@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-CMD ["go", "test", "./..."]
+CMD ["go", "test", "./...", "-v"]
 
 FROM tester AS build
 
@@ -29,7 +29,7 @@ RUN apk add --no-cache bash && \
 RUN go build -o ./Scribe cmd/scribe/main.go
 
 # Image created: Dec 31, 1, 3:47:32 PM
-FROM gcr.io/distroless/base-debian12@sha256-20bc1021b26cbc67b9b40f8df10d97a06287312b19a5ae86092cb33d0fcd8ab5 AS deploy
+FROM gcr.io/distroless/base-debian12@ssha256:20bc1021b26cbc67b9b40f8df10d97a06287312b19a5ae86092cb33d0fcd8ab5 AS deploy
 
 COPY --from=build /go/src/api/Scribe Scribe
 ENV GIN_MODE=release
