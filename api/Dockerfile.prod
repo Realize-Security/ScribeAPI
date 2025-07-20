@@ -1,4 +1,4 @@
-FROM golang:1.23.4-alpine3.21 AS build
+FROM golang:1.23.4-alpine3.21 AS tester
 
 LABEL maintainer="Realize Security Ltd."
 
@@ -13,6 +13,10 @@ RUN go mod download
 
 COPY . .
 
+CMD ["go", "test", "./...", "-v"]
+
+FROM tester AS build
+
 RUN apk add --no-cache bash && \
     apk add --no-cache ca-certificates && \
     apk add --no-cache libc6-compat && \
@@ -24,7 +28,7 @@ RUN apk add --no-cache bash && \
 RUN go build -o ./Scribe cmd/scribe/main.go
 
 # Image created: Dec 31, 1, 3:47:32 PM
-FROM gcr.io/distroless/base-debian12@sha256-8d946e4103571ec0e2f471eac7c4859a7f169686d222f5c8b2d9d391d6d1e50c AS deploy
+FROM gcr.io/distroless/base-debian12@sha256:8d946e4103571ec0e2f471eac7c4859a7f169686d222f5c8b2d9d391d6d1e50c AS deploy
 
 COPY --from=build /go/src/api/Scribe Scribe
 

@@ -1,0 +1,12 @@
+name: Run unit tests
+on:
+  push:
+    branches-ignore:
+      - release/*
+      - main
+
+jobs:
+  run_unit_tests:
+    uses: ./.github/workflows/unit-test-template.yml
+    with:
+      version: '14'

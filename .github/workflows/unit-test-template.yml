@@ -1,0 +1,74 @@
+name: Run unit tests and cache build artifacts
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+
+env:
+  unit-testing-cache: go-testing-packages
+
+jobs:
+  api_unit_tests:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # Optional: Cache Go modules for faster builds if not using image cache fully
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-modules-${{ hashFiles('api/go.mod', 'api/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-modules-
+
+      # Restore unit test Docker image tarball cache based on the hash of the api/ directory
+      - name: Restore unit test Docker image tarball cache
+        id: cache_unit_test_image
+        uses: actions/cache@v3
+        with:
+          path: cache/docker-image
+          key: image-unit-test-tar-${{ hashFiles('api/**') }}
+
+      # If the Docker image tarball was cached, load it into Docker
+      - name: Load Docker image from tarball
+        if: steps.cache_unit_test_image.outputs.cache-hit == 'true'
+        run: |
+          echo "Cached Docker image tarball found. Loading image..."
+          docker load -i cache/docker-image/unit_test_image.tar
+
+      # Build the unit test image if the tarball wasn't cached
+      - name: Build unit test image
+        if: steps.cache_unit_test_image.outputs.cache-hit != 'true'
+        env:
+          DOCKER_IMAGE: rsec-scribe-test:${{ hashFiles('api/**') }}
+        run: |
+          docker build -f api/Dockerfile.prod --target tester -t $DOCKER_IMAGE api/
+
+      # Save the Docker image as a tarball for caching if it was just built
+      - name: Save Docker image to tarball
+        if: steps.cache_unit_test_image.outputs.cache-hit != 'true'
+        env:
+          DOCKER_IMAGE: rsec-scribe-test:${{ hashFiles('api/**') }}
+        run: |
+          docker save $DOCKER_IMAGE -o unit_test_image.tar
+          mkdir -p cache/docker-image
+          mv unit_test_image.tar cache/docker-image/
+
+      # Cache the Docker image tarball for future runs
+      - name: Save Docker image tarball cache
+        if: steps.cache_unit_test_image.outputs.cache-hit != 'true'
+        uses: actions/cache@v3
+        with:
+          path: cache/docker-image
+          key: image-unit-test-tar-${{ hashFiles('api/**') }}
+
+      # Run the unit tests using the Docker image
+      - name: Run unit tests using Docker image
+        env:
+          DOCKER_IMAGE: rsec-scribe-test:${{ hashFiles('api/**') }}
+        run: |
+          echo "Running unit tests using Docker image..."
+          docker run --rm $DOCKER_IMAGE
