@@ -27,7 +27,6 @@ services:
     env_file:
       - ./db-variables.prod.env
       - ./api-variables.prod.env
-      - ./cache-variables.env
       - ./common-api-variables.env
     depends_on:
       - scribe_postgres

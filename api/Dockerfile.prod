@@ -5,6 +5,7 @@ LABEL maintainer="Realize Security Ltd."
 WORKDIR /go/src/api
 
 ENV GO111MODULE=on
+ENV GIN_MODE=development
 
 COPY go.mod .
 COPY go.sum .
@@ -31,5 +32,6 @@ RUN go build -o ./Scribe cmd/scribe/main.go
 FROM gcr.io/distroless/base-debian12@sha256:8d946e4103571ec0e2f471eac7c4859a7f169686d222f5c8b2d9d391d6d1e50c AS deploy
 
 COPY --from=build /go/src/api/Scribe Scribe
+ENV GIN_MODE=release
 
 CMD ["./Scribe"]
