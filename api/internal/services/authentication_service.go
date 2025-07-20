@@ -316,7 +316,7 @@ func (auth *AuthenticationService) authCookiesValid(c *gin.Context) (bool, error
 		return false, err
 	}
 
-	setLoginCookies(newAuthSet, c, cookieDomain(), secureCookies())
+	setLoginCookies(newAuthSet, c, config.CookieDomain, secureCookies())
 	return true, nil
 }
 
@@ -327,7 +327,7 @@ func (auth *AuthenticationService) LoginUser(token *entities.AuthSet, c *gin.Con
 	if c == nil {
 		return errors.New("gin context is nil")
 	}
-	setLoginCookies(token, c, cookieDomain(), secureCookies())
+	setLoginCookies(token, c, config.CookieDomain, secureCookies())
 	return nil
 }
 
@@ -344,7 +344,7 @@ func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
 		return err
 	}
 
-	invalidateCookies(c, cookieDomain(), secureCookies())
+	invalidateCookies(c, config.CookieDomain, secureCookies())
 	log.Printf(config.LogLogoutUserSuccess, claims.UserID)
 	return nil
 }
@@ -373,8 +373,4 @@ func secureCookies() bool {
 		return false
 	}
 	return true
-}
-
-func cookieDomain() string {
-	return os.Getenv("COOKIE_DOMAIN")
 }

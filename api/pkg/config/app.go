@@ -2,6 +2,7 @@ package config
 
 const (
 	ApiName                  = "ScribeAPI"
+	CookieDomain             = "realizesec.com"
 	MasterOrganisation       = "Realize Security"
 	MasterDomain             = "realizesec.com"
 	MasterUserFirstName      = "Janus"

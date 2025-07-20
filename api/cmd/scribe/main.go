@@ -8,29 +8,14 @@ import (
 	"Scribe/internal/infrastructure/database"
 	"Scribe/internal/services"
 	"Scribe/pkg/config"
-	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"log"
-	"net"
 	"os"
-	"strconv"
 )
 
 func main() {
-
-	host := os.Getenv("ADDR")
-	port := os.Getenv("PORT")
-	if net.ParseIP(host) == nil {
-		_ = fmt.Errorf("error: %s is not a valid IP address. Falling back to: %s", host, "0.0.0.0")
-		host = "0.0.0.0"
-	}
-
-	if val, err := strconv.Atoi(port); err != nil || (val < 1 || val > 65535) {
-		_ = fmt.Errorf("error: %s is not a valid port. Falling back to: %s", port, "8080")
-		port = "8080"
-	}
 
 	dbConf := database.Config{
 		MaxIdle:             config.DBMaxIdleConnectionsValue,
@@ -49,7 +34,7 @@ func main() {
 	validators.Validator = validators.InitValidator()
 
 	router := configureRouter()
-	_ = router.Run(host + ":" + port)
+	_ = router.Run("0.0.0.0:8080")
 }
 
 func configureRouter() *gin.Engine {
@@ -65,12 +50,11 @@ func configureRouter() *gin.Engine {
 	corsConfig := cors.Config{
 		AllowOrigins: []string{
 			"https://scribe-dev.realizesec.com",
-			"https://scribe-test.realizesec.com",
 			"https://scribe-stage.realizesec.com",
 			"https://scribe.realizesec.com",
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "CookieRefreshToken", "Cookie"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Cookie"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * 60 * 60,
