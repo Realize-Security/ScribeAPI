@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-CMD ["go", "test", "./...", "-v"]
+CMD ["go", "test", "./..."]
 
 FROM tester AS build
 
