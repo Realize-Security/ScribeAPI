@@ -5,7 +5,7 @@ LABEL maintainer="Realize Security Ltd."
 WORKDIR /go/src/api
 
 ENV GO111MODULE=on
-ENV GIN_MODE=development
+ENV GIN_MODE=debug
 
 COPY go.mod .
 COPY go.sum .
