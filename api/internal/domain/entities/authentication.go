@@ -14,6 +14,10 @@ type JWTCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
+type SessionState struct {
+	JTI string
+}
+
 type Claims interface {
 	GetUserID() (string, error)
 }
