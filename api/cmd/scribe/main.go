@@ -5,6 +5,7 @@ import (
 	"Scribe/internal/domain/entities"
 	"Scribe/internal/domain/repositories"
 	"Scribe/internal/domain/validators"
+	"Scribe/internal/infrastructure/cache"
 	"Scribe/internal/infrastructure/database"
 	"Scribe/internal/services"
 	"Scribe/pkg/config"
@@ -30,6 +31,9 @@ func main() {
 	}
 	migrate(database.Db)
 	go database.DBHealthMonitor(dbConf)
+
+	// Initialise caches
+	cache.SessionCache.Get()
 
 	validators.Validator = validators.InitValidator()
 
