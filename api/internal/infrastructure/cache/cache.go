@@ -1,30 +1,39 @@
 package cache
 
 import (
+	"Scribe/internal/domain/entities"
 	"sync"
 	"time"
 )
 
-// Entry sets the type for generic entries into the cache and an expiry time
+var SessionCache Singleton[string, entities.SessionState]
+
+// Entry holds the value and its expiration time.
 type Entry[V any] struct {
 	value  V
 	expiry time.Time
 }
 
-// Cache generic and thread safe in-memory key-value store
+// Cache is a thread-safe in-memory key-value store with optional TTL support.
 type Cache[K comparable, V any] struct {
 	mu   sync.Mutex
 	data map[K]Entry[V]
 }
 
-// New creates a new instance of Cache
+// Singleton provides a generic way to create singleton instances of Cache[K, V].
+type Singleton[K comparable, V any] struct {
+	once     sync.Once
+	instance *Cache[K, V]
+}
+
+// New creates a new Cache instance.
 func New[K comparable, V any]() *Cache[K, V] {
 	return &Cache[K, V]{
 		data: make(map[K]Entry[V]),
 	}
 }
 
-// Get retrieves value for key if Entry has not expired
+// Get retrieves the value for the given key if it exists and hasn't expired.
 func (c *Cache[K, V]) Get(key K) (V, bool) {
 	c.mu.Lock()
 	entry, ok := c.data[key]
@@ -45,7 +54,6 @@ func (c *Cache[K, V]) Get(key K) (V, bool) {
 }
 
 // Set stores the value for the given key with an optional TTL.
-// If ttl <= 0, the entry does not expire.
 func (c *Cache[K, V]) Set(key K, value V, ttl time.Duration) {
 	expiry := time.Time{}
 	if ttl > 0 {
@@ -61,4 +69,12 @@ func (c *Cache[K, V]) Delete(key K) {
 	c.mu.Lock()
 	delete(c.data, key)
 	c.mu.Unlock()
+}
+
+// Get returns the singleton instance of Cache[K, V], initializing it if necessary.
+func (s *Singleton[K, V]) Get() *Cache[K, V] {
+	s.once.Do(func() {
+		s.instance = New[K, V]()
+	})
+	return s.instance
 }
