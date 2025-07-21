@@ -286,7 +286,7 @@ func (auth *AuthenticationService) authCookiesValid(c *gin.Context) (bool, error
 	}
 
 	// If auth token is invalid, try to validate the refresh token
-	userUUID, err := auth.ValidateRefreshToken(ac.RefreshToken)
+	userID, err := auth.ValidateRefreshToken(ac.RefreshToken)
 	if err != nil {
 		return false, err
 	}
@@ -304,14 +304,15 @@ func (auth *AuthenticationService) authCookiesValid(c *gin.Context) (bool, error
 		return false, errors.New("failed to parse auth token claims")
 	}
 
-	if atClaims.UserID != userUUID {
-		errS := fmt.Sprintf(config.LogRefreshAndAuthTokenUIDMismatchAlert, atClaims.UserID, userUUID)
+	// Does the user ID in the auth token match that in the refresh token?
+	if atClaims.UserID != userID {
+		errS := fmt.Sprintf(config.LogRefreshAndAuthTokenUIDMismatchAlert, atClaims.UserID, userID)
 		log.Printf(errS)
 		return false, errors.New(errS)
 	}
 
 	// Generate new auth set and reissue cookies
-	newAuthSet, err := auth.GenerateAuthToken(userUUID)
+	newAuthSet, err := auth.GenerateAuthToken(userID)
 	if err != nil {
 		return false, err
 	}
