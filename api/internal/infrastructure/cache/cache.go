@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var SessionCache Singleton[string, entities.SessionState]
+var SessionCache Singleton[int, entities.SessionState]
 
 // Entry holds the value and its expiration time.
 type Entry[V any] struct {
