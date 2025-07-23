@@ -2,6 +2,7 @@ package services
 
 import (
 	"Scribe/internal/domain/entities"
+	"Scribe/internal/infrastructure/cache"
 	"Scribe/pkg/config"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -330,5 +331,234 @@ func (s *AuthServiceTestSuite) TestLogoutUser() {
 
 		assert.Error(s.T(), err)
 		assert.Contains(s.T(), err.Error(), "token is malformed")
+	})
+}
+
+func (s *AuthServiceTestSuite) TestGenerateAuthTokenCachesJTI() {
+	s.Run("stores JTI in cache when generating auth token", func() {
+		userID := 123
+
+		authSet, err := s.auth.GenerateAuthToken(userID)
+		require.NoError(s.T(), err)
+
+		// Verify JTI is stored in cache
+		sc := cache.SessionCache.Get()
+		value, exists := sc.Get(userID)
+		assert.True(s.T(), exists, "User session should exist in cache")
+
+		assert.Equal(s.T(), authSet.JTI, value.JTI, "Cached JTI should match token JTI")
+	})
+
+	s.Run("overwrites existing cache entry for same user", func() {
+		userID := 1
+
+		// Generate first token
+		authSet1, err := s.auth.GenerateAuthToken(userID)
+		require.NoError(s.T(), err)
+
+		// Generate second token for same user
+		authSet2, err := s.auth.GenerateAuthToken(userID)
+		require.NoError(s.T(), err)
+
+		// Verify cache contains the latest JTI
+		sc := cache.SessionCache.Get()
+		value, exists := sc.Get(userID)
+		assert.True(s.T(), exists)
+
+		assert.Equal(s.T(), authSet2.JTI, value.JTI, "Cache should contain the latest JTI")
+		assert.NotEqual(s.T(), authSet1.JTI, value.JTI, "Should not contain old JTI")
+	})
+}
+
+func (s *AuthServiceTestSuite) TestAuthenticationRequiresCacheEntry() {
+	s.Run("blocks authentication when user not in cache despite valid refresh token", func() {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		userID := 1
+
+		// Create expired auth token and valid refresh token
+		expiredAuthToken := createExpiredToken(s.auth, userID, false)
+		refreshToken, err := s.auth.GenerateRefreshToken(userID)
+		require.NoError(s.T(), err)
+
+		// Explicitly ensure user is NOT in cache
+		sc := cache.SessionCache.Get()
+		sc.Delete(userID)
+
+		req := httptest.NewRequest("GET", "/", nil)
+		req.AddCookie(&http.Cookie{Name: config.CookieAuthToken, Value: expiredAuthToken})
+		req.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: refreshToken})
+		c.Request = req
+
+		middleware := s.auth.IsAuthenticated()
+		middleware(c)
+
+		assert.Equal(s.T(), http.StatusForbidden, w.Code)
+	})
+
+	s.Run("allows authentication when user in cache with valid refresh token", func() {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		userID := 1
+
+		// Put user in cache first
+		addSessionToCache(userID, "some-jti", config.CacheNoTTLExpiry)
+
+		// Create expired auth token and valid refresh token
+		expiredAuthToken := createExpiredToken(s.auth, userID, false)
+		refreshToken, err := s.auth.GenerateRefreshToken(userID)
+		require.NoError(s.T(), err)
+
+		req := httptest.NewRequest("GET", "/", nil)
+		req.AddCookie(&http.Cookie{Name: config.CookieAuthToken, Value: expiredAuthToken})
+		req.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: refreshToken})
+		c.Request = req
+
+		middleware := s.auth.IsAuthenticated()
+		middleware(c)
+
+		assert.Equal(s.T(), http.StatusOK, w.Code)
+
+		// Verify new auth token was issued and cache updated
+		cookies := w.Result().Cookies()
+		var foundNewAuth bool
+		for _, cookie := range cookies {
+			if cookie.Name == config.CookieAuthToken && cookie.Value != expiredAuthToken {
+				foundNewAuth = true
+				break
+			}
+		}
+		assert.True(s.T(), foundNewAuth, "Should have issued new auth token")
+	})
+}
+
+func (s *AuthServiceTestSuite) TestTokenUserIDMismatchSecurity() {
+	s.Run("blocks when auth token user ID doesn't match refresh token user ID", func() {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		userID1 := 1
+		userID2 := 2
+
+		// Put userID2 in cache
+		addSessionToCache(userID2, "some-jti", config.CacheNoTTLExpiry)
+
+		// Create expired auth token for userID1 and valid refresh token for userID2
+		expiredAuthToken := createExpiredToken(s.auth, userID1, false)
+		refreshToken, err := s.auth.GenerateRefreshToken(userID2)
+		require.NoError(s.T(), err)
+
+		req := httptest.NewRequest("GET", "/", nil)
+		req.AddCookie(&http.Cookie{Name: config.CookieAuthToken, Value: expiredAuthToken})
+		req.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: refreshToken})
+		c.Request = req
+
+		middleware := s.auth.IsAuthenticated()
+		middleware(c)
+
+		assert.Equal(s.T(), http.StatusForbidden, w.Code)
+	})
+}
+
+func (s *AuthServiceTestSuite) TestLogoutClearsCache() {
+	s.Run("removes user from cache on successful logout", func() {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		userID := 1
+		authSet, err := s.auth.GenerateAuthToken(userID)
+		require.NoError(s.T(), err)
+
+		// Verify user is in cache before logout
+		sc := cache.SessionCache.Get()
+		_, exists := sc.Get(userID)
+		assert.True(s.T(), exists, "User should be in cache before logout")
+
+		req := httptest.NewRequest("GET", "/api/logout", nil)
+		req.AddCookie(&http.Cookie{Name: config.CookieAuthToken, Value: authSet.AuthToken})
+		req.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: authSet.RefreshToken})
+		c.Request = req
+
+		err = s.auth.LogoutUser(c)
+		assert.NoError(s.T(), err)
+
+		// Verify user was removed from cache
+		_, exists = sc.Get(userID)
+		assert.False(s.T(), exists, "User should be removed from cache after logout")
+	})
+}
+
+func (s *AuthServiceTestSuite) TestCacheBasedTokenRevocation() {
+	s.Run("valid tokens become invalid when user removed from cache", func() {
+		userID := 1
+
+		// Generate valid tokens and verify they work
+		authSet, err := s.auth.GenerateAuthToken(userID)
+		require.NoError(s.T(), err)
+
+		// First request should succeed
+		w1 := httptest.NewRecorder()
+		c1, _ := gin.CreateTestContext(w1)
+		req1 := httptest.NewRequest("GET", "/", nil)
+		req1.AddCookie(&http.Cookie{Name: config.CookieAuthToken, Value: authSet.AuthToken})
+		req1.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: authSet.RefreshToken})
+		c1.Request = req1
+
+		middleware1 := s.auth.IsAuthenticated()
+		middleware1(c1)
+		assert.Equal(s.T(), http.StatusOK, w1.Code, "First request should succeed")
+
+		// Remove user from cache (simulating logout or revocation)
+		sc := cache.SessionCache.Get()
+		sc.Delete(userID)
+
+		// Second request with same tokens should fail
+		w2 := httptest.NewRecorder()
+		c2, _ := gin.CreateTestContext(w2)
+		req2 := httptest.NewRequest("GET", "/", nil)
+		req2.AddCookie(&http.Cookie{Name: config.CookieAuthToken, Value: authSet.AuthToken})
+		req2.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: authSet.RefreshToken})
+		c2.Request = req2
+
+		middleware2 := s.auth.IsAuthenticated()
+		middleware2(c2)
+		assert.Equal(s.T(), http.StatusForbidden, w2.Code, "Second request should fail after cache removal")
+	})
+}
+
+func (s *AuthServiceTestSuite) TestAuthTokenRefreshUpdatesCache() {
+	s.Run("updates cache with new JTI when refreshing auth token", func() {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		userID := 1
+
+		// Generate initial auth set and get the JTI
+		initialAuthSet, err := s.auth.GenerateAuthToken(userID)
+		require.NoError(s.T(), err)
+		initialJTI := initialAuthSet.JTI
+
+		// Create expired auth token to trigger refresh
+		expiredAuthToken := createExpiredToken(s.auth, userID, false)
+
+		req := httptest.NewRequest("GET", "/", nil)
+		req.AddCookie(&http.Cookie{Name: config.CookieAuthToken, Value: expiredAuthToken})
+		req.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: initialAuthSet.RefreshToken})
+		c.Request = req
+
+		middleware := s.auth.IsAuthenticated()
+		middleware(c)
+
+		assert.Equal(s.T(), http.StatusOK, w.Code)
+
+		// Verify cache was updated with new JTI
+		sc := cache.SessionCache.Get()
+		value, exists := sc.Get(userID)
+		assert.True(s.T(), exists)
+
+		assert.NotEqual(s.T(), initialJTI, value.JTI, "JTI should be updated after refresh")
+		assert.NotEmpty(s.T(), value.JTI, "New JTI should not be empty")
 	})
 }

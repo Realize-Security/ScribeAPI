@@ -2,6 +2,7 @@ package services
 
 import (
 	"Scribe/internal/domain/entities"
+	"Scribe/internal/infrastructure/cache"
 	"Scribe/pkg/config"
 	"crypto/rand"
 	"crypto/rsa"
@@ -66,7 +67,7 @@ type TokenKeys struct {
 // IsAuthenticated validates a user session
 func (auth *AuthenticationService) IsAuthenticated() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if valid, err := auth.authCookiesValid(c); err != nil || !valid {
+		if valid, err := auth.validateSession(c); err != nil || !valid {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
@@ -101,6 +102,8 @@ func (auth *AuthenticationService) HashPassword(pwd string) (string, error) {
 	return hash, nil
 }
 
+// GenerateAuthToken creates an authentication token.
+// The generated JTI is associated with the requesting userID in the SessionCache
 func (auth *AuthenticationService) GenerateAuthToken(userID int) (*entities.AuthSet, error) {
 	if userID < 0 {
 		return nil, fmt.Errorf("invalid user ID value: %d", userID)
@@ -135,11 +138,28 @@ func (auth *AuthenticationService) GenerateAuthToken(userID int) (*entities.Auth
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 
+	addSessionToCache(userID, jti, config.CacheNoTTLExpiry)
+
 	return &entities.AuthSet{
 		AuthToken:    ss,
 		RefreshToken: rt,
 		JTI:          claims.RegisteredClaims.ID,
 	}, nil
+}
+
+// addSessionToCache sets the generated JTI as the value for the userID key
+func addSessionToCache(userID int, jti string, ttl time.Duration) {
+	sc := cache.SessionCache.Get()
+	state := entities.SessionState{
+		JTI: jti,
+	}
+	sc.Set(userID, state, ttl)
+}
+
+// deleteSessionFromCache deletes the JTI for the associated userID from the SessionCache
+func deleteSessionFromCache(userID int) {
+	sc := cache.SessionCache.Get()
+	sc.Delete(userID)
 }
 
 func (auth *AuthenticationService) GenerateRefreshToken(userID int) (string, error) {
@@ -272,27 +292,14 @@ func (auth *AuthenticationService) TokenClaimsFromRequestAndValidate(c *gin.Cont
 	return claims, nil
 }
 
-// authCookiesValid validates session cookies and reissues if auth/refresh values are valid.
-func (auth *AuthenticationService) authCookiesValid(c *gin.Context) (bool, error) {
+// validateSession validates session cookies and reissues if auth/refresh values are valid.
+func (auth *AuthenticationService) validateSession(c *gin.Context) (bool, error) {
 	ac, err := extractAuthCookies(c)
 	if err != nil {
 		return false, err
 	}
 
-	// Try to validate the auth token first
-	_, err = validateTokenSignature(auth, ac.AuthToken)
-	if err == nil {
-		return true, nil
-	}
-
-	// If auth token is invalid, try to validate the refresh token
-	userID, err := auth.ValidateRefreshToken(ac.RefreshToken)
-	if err != nil {
-		return false, err
-	}
-
-	// If we got here, the refresh token is valid but the auth token isn't
-	// Check that the invalid auth token was for the same user
+	// Extract user ID from auth token (without signature validation)
 	parser := jwt.NewParser()
 	at, _, err := parser.ParseUnverified(ac.AuthToken, &entities.JWTCustomClaims{})
 	if err != nil {
@@ -304,16 +311,42 @@ func (auth *AuthenticationService) authCookiesValid(c *gin.Context) (bool, error
 		return false, errors.New("failed to parse auth token claims")
 	}
 
+	userID := atClaims.UserID
+
+	// Check if user exists in cache (required for all authentication)
+	sc := cache.SessionCache.Get()
+	_, exists := sc.Get(userID)
+	if !exists {
+		return false, errors.New("user session not found")
+	}
+
+	// Try to validate the auth token first
+	_, err = validateTokenSignature(auth, ac.AuthToken)
+	if err == nil {
+		return true, nil
+	}
+
+	// If auth token is invalid AND current user's JTI is in SessionCache, try to validate the refresh token
+	userID, err = auth.ValidateRefreshToken(ac.RefreshToken)
+	_, exists = sc.Get(userID)
+
+	if err != nil || !exists {
+		deleteSessionFromCache(userID)
+		return false, err
+	}
+
 	// Does the user ID in the auth token match that in the refresh token?
 	if atClaims.UserID != userID {
 		errS := fmt.Sprintf(config.LogRefreshAndAuthTokenUIDMismatchAlert, atClaims.UserID, userID)
 		log.Printf(errS)
+		deleteSessionFromCache(userID)
 		return false, errors.New(errS)
 	}
 
 	// Generate new auth set and reissue cookies
 	newAuthSet, err := auth.GenerateAuthToken(userID)
 	if err != nil {
+		deleteSessionFromCache(userID)
 		return false, err
 	}
 
@@ -347,6 +380,9 @@ func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
 
 	invalidateCookies(c, config.CookieDomain, secureCookies())
 	log.Printf(config.LogLogoutUserSuccess, claims.UserID)
+
+	deleteSessionFromCache(claims.UserID)
+
 	return nil
 }
 
