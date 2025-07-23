@@ -99,7 +99,7 @@ func (us *UserService) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := us.ar.GenerateAuthToken(user.ID)
+	token, err := us.ar.GenerateAuthTokenFromUserID(user.ID)
 	if err != nil {
 		log.Printf(config.LogHashingErrorForUserID, user.ID)
 		c.JSON(http.StatusUnauthorized, gin.H{
