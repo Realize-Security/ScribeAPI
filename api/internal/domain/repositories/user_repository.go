@@ -11,6 +11,7 @@ import (
 type UserRepository interface {
 	Create(user *entities.UserDBModel) error
 	FindByEmail(email string) (*entities.UserDBModel, error)
+	FindByID(id int) (*entities.UserDBModel, error)
 }
 
 type userRepository struct {
@@ -51,6 +52,21 @@ func (ur userRepository) FindByEmail(email string) (*entities.UserDBModel, error
 
 	if result.Error != nil || result.RowsAffected == 0 {
 		log.Printf(config.LogUserFindByEmailFailed, email)
+		return nil, errors.New("user not found")
+	}
+
+	return &user, nil
+}
+
+func (ur userRepository) FindByID(id int) (*entities.UserDBModel, error) {
+	var user entities.UserDBModel
+	result := ur.db.Raw("SELECT * FROM users WHERE users.id = @id  AND users.deleted_at IS NULL LIMIT 1",
+		map[string]interface{}{
+			"id": id,
+		}).Scan(&user)
+
+	if result.Error != nil || result.RowsAffected == 0 {
+		log.Printf(config.LogUserFindByIDFailed, id)
 		return nil, errors.New("user not found")
 	}
 
