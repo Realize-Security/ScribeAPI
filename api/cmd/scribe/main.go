@@ -74,13 +74,13 @@ func configureRouter() *gin.Engine {
 func initialiseHandlers(r *gin.Engine) {
 	handlers.ApiHealthCheckRoutes(&r.RouterGroup)
 
-	as, err := services.NewAuthenticationService()
+	ur := repositories.NewUserRepository(database.Db)
+	as, err := services.NewAuthenticationService(ur)
 	if err != nil {
 		log.Printf("failed to initialise auth service: %s", err.Error())
 		os.Exit(config.ExitError)
 	}
 
-	ur := repositories.NewUserRepository(database.Db)
 	us := services.NewUserServiceRepository(ur, as)
 	uh := handlers.NewUserHandler(us, as)
 
