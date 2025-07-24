@@ -16,7 +16,7 @@ type JWTCustomClaims struct {
 
 type SessionState struct {
 	JTI   string
-	Roles []int
+	Roles []string
 }
 
 type Claims interface {

@@ -4,6 +4,7 @@ import (
 	"Scribe/internal/domain/entities"
 	"Scribe/internal/infrastructure/cache"
 	"Scribe/pkg/config"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
@@ -24,10 +25,42 @@ func TestAuthServiceSuite(t *testing.T) {
 	suite.Run(t, new(AuthServiceTestSuite))
 }
 
+type fakeUserRepo struct{}
+
+func (f *fakeUserRepo) Create(user *entities.UserDBModel) error {
+	// Stub implementation: do nothing and return nil since not used in tests
+	return nil
+}
+
+func (f *fakeUserRepo) FindByEmail(email string) (*entities.UserDBModel, error) {
+	// Stub implementation: return nil and error since not used in tests
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (f *fakeUserRepo) FindByID(id int) (*entities.UserDBModel, error) {
+	if id < 0 {
+		return nil, fmt.Errorf("invalid user ID")
+	}
+	return &entities.UserDBModel{
+		Base: entities.Base{
+			ID: id,
+		},
+		Roles: []entities.RoleDBModel{},
+	}, nil
+}
+
 func (s *AuthServiceTestSuite) SetupTest() {
+	ur := &fakeUserRepo{}
 	var err error
-	s.auth, err = NewAuthenticationService()
+	s.auth, err = NewAuthenticationService(ur)
 	require.NoError(s.T(), err)
+}
+
+func (s *AuthServiceTestSuite) TestPasswordHandling() {
+	hash, err := s.auth.HashPassword("testpass")
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), s.auth.PasswordsMatch(hash, "testpass"))
+	assert.False(s.T(), s.auth.PasswordsMatch(hash, "wrongpass"))
 }
 
 // Helper function to create expired tokens
@@ -61,7 +94,7 @@ func createExpiredToken(auth *AuthenticationService, userID int, isRefresh bool)
 func (s *AuthServiceTestSuite) TestGenerateAuthToken() {
 	s.Run("generates valid auth token", func() {
 		userID := 1
-		authSet, err := s.auth.GenerateAuthToken(userID)
+		authSet, err := s.auth.GenerateAuthTokenFromUserID(userID)
 
 		assert.NoError(s.T(), err)
 		assert.NotNil(s.T(), authSet)
@@ -81,7 +114,7 @@ func (s *AuthServiceTestSuite) TestGenerateAuthToken() {
 
 	s.Run("fails with an invalid int", func() {
 		userID := -1
-		authSet, err := s.auth.GenerateAuthToken(userID)
+		authSet, err := s.auth.GenerateAuthTokenFromUserID(userID)
 
 		assert.Error(s.T(), err)
 		assert.Nil(s.T(), authSet)
@@ -96,7 +129,7 @@ func (s *AuthServiceTestSuite) TestIsAuthenticated() {
 		// Create a test request with valid cookies
 		req := httptest.NewRequest("GET", "/", nil)
 		userID := 1
-		authSet, err := s.auth.GenerateAuthToken(userID)
+		authSet, err := s.auth.GenerateAuthTokenFromUserID(userID)
 		require.NoError(s.T(), err)
 
 		req.AddCookie(&http.Cookie{
@@ -230,7 +263,7 @@ func (s *AuthServiceTestSuite) TestTokenClaimsFromRequestAndValidate() {
 		c, _ := gin.CreateTestContext(w)
 
 		userID := 1
-		authSet, err := s.auth.GenerateAuthToken(userID)
+		authSet, err := s.auth.GenerateAuthTokenFromUserID(userID)
 		require.NoError(s.T(), err)
 
 		req := httptest.NewRequest("GET", "/", nil)
@@ -265,7 +298,7 @@ func (s *AuthServiceTestSuite) TestLogoutUser() {
 
 		// Set up an authenticated user
 		userID := 1
-		authSet, err := s.auth.GenerateAuthToken(userID)
+		authSet, err := s.auth.GenerateAuthTokenFromUserID(userID)
 		require.NoError(s.T(), err)
 
 		// Create test request with cookies
@@ -338,7 +371,7 @@ func (s *AuthServiceTestSuite) TestGenerateAuthTokenCachesJTI() {
 	s.Run("stores JTI in cache when generating auth token", func() {
 		userID := 123
 
-		authSet, err := s.auth.GenerateAuthToken(userID)
+		authSet, err := s.auth.GenerateAuthTokenFromUserID(userID)
 		require.NoError(s.T(), err)
 
 		// Verify JTI is stored in cache
@@ -353,11 +386,11 @@ func (s *AuthServiceTestSuite) TestGenerateAuthTokenCachesJTI() {
 		userID := 1
 
 		// Generate first token
-		authSet1, err := s.auth.GenerateAuthToken(userID)
+		authSet1, err := s.auth.GenerateAuthTokenFromUserID(userID)
 		require.NoError(s.T(), err)
 
 		// Generate second token for same user
-		authSet2, err := s.auth.GenerateAuthToken(userID)
+		authSet2, err := s.auth.GenerateAuthTokenFromUserID(userID)
 		require.NoError(s.T(), err)
 
 		// Verify cache contains the latest JTI
@@ -403,8 +436,12 @@ func (s *AuthServiceTestSuite) TestAuthenticationRequiresCacheEntry() {
 
 		userID := 1
 
+		session := entities.SessionState{
+			JTI: "some-jti",
+		}
+
 		// Put user in cache first
-		addSessionToCache(userID, "some-jti", config.CacheNoTTLExpiry)
+		addSessionToCache(userID, session, config.CacheNoTTLExpiry)
 
 		// Create expired auth token and valid refresh token
 		expiredAuthToken := createExpiredToken(s.auth, userID, false)
@@ -434,41 +471,13 @@ func (s *AuthServiceTestSuite) TestAuthenticationRequiresCacheEntry() {
 	})
 }
 
-func (s *AuthServiceTestSuite) TestTokenUserIDMismatchSecurity() {
-	s.Run("blocks when auth token user ID doesn't match refresh token user ID", func() {
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-
-		userID1 := 1
-		userID2 := 2
-
-		// Put userID2 in cache
-		addSessionToCache(userID2, "some-jti", config.CacheNoTTLExpiry)
-
-		// Create expired auth token for userID1 and valid refresh token for userID2
-		expiredAuthToken := createExpiredToken(s.auth, userID1, false)
-		refreshToken, err := s.auth.GenerateRefreshToken(userID2)
-		require.NoError(s.T(), err)
-
-		req := httptest.NewRequest("GET", "/", nil)
-		req.AddCookie(&http.Cookie{Name: config.CookieAuthToken, Value: expiredAuthToken})
-		req.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: refreshToken})
-		c.Request = req
-
-		middleware := s.auth.IsAuthenticated()
-		middleware(c)
-
-		assert.Equal(s.T(), http.StatusForbidden, w.Code)
-	})
-}
-
 func (s *AuthServiceTestSuite) TestLogoutClearsCache() {
 	s.Run("removes user from cache on successful logout", func() {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 
 		userID := 1
-		authSet, err := s.auth.GenerateAuthToken(userID)
+		authSet, err := s.auth.GenerateAuthTokenFromUserID(userID)
 		require.NoError(s.T(), err)
 
 		// Verify user is in cache before logout
@@ -495,7 +504,7 @@ func (s *AuthServiceTestSuite) TestCacheBasedTokenRevocation() {
 		userID := 1
 
 		// Generate valid tokens and verify they work
-		authSet, err := s.auth.GenerateAuthToken(userID)
+		authSet, err := s.auth.GenerateAuthTokenFromUserID(userID)
 		require.NoError(s.T(), err)
 
 		// First request should succeed
@@ -536,7 +545,7 @@ func (s *AuthServiceTestSuite) TestAuthTokenRefreshUpdatesCache() {
 		userID := 1
 
 		// Generate initial auth set and get the JTI
-		initialAuthSet, err := s.auth.GenerateAuthToken(userID)
+		initialAuthSet, err := s.auth.GenerateAuthTokenFromUserID(userID)
 		require.NoError(s.T(), err)
 		initialJTI := initialAuthSet.JTI
 

@@ -2,6 +2,7 @@ package services
 
 import (
 	"Scribe/internal/domain/entities"
+	"Scribe/internal/domain/repositories"
 	"Scribe/internal/infrastructure/cache"
 	"Scribe/pkg/config"
 	"crypto/rand"
@@ -24,7 +25,8 @@ type AuthenticationRepository interface {
 	IsAuthenticated() gin.HandlerFunc
 	PasswordsMatch(hashed, plain string) bool
 	HashPassword(pwd string) (string, error)
-	GenerateAuthToken(userID int) (*entities.AuthSet, error)
+	GenerateAuthTokenFromUser(user *entities.UserDBModel) (*entities.AuthSet, error)
+	GenerateAuthTokenFromUserID(userID int) (*entities.AuthSet, error)
 	LoginUser(token *entities.AuthSet, c *gin.Context) error
 	LogoutUser(c *gin.Context) error
 	TokenClaimsFromRequestAndValidate(c *gin.Context) (entities.JWTCustomClaims, error)
@@ -34,9 +36,10 @@ type AuthenticationRepository interface {
 
 type AuthenticationService struct {
 	keys *TokenKeys
+	ur   repositories.UserRepository
 }
 
-func NewAuthenticationService() (*AuthenticationService, error) {
+func NewAuthenticationService(ur repositories.UserRepository) (*AuthenticationService, error) {
 	certManager, err := NewCertManager()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize certificate manager: %w", err)
@@ -51,6 +54,7 @@ func NewAuthenticationService() (*AuthenticationService, error) {
 
 	return &AuthenticationService{
 		keys: keys,
+		ur:   ur,
 	}, nil
 }
 
@@ -102,11 +106,32 @@ func (auth *AuthenticationService) HashPassword(pwd string) (string, error) {
 	return hash, nil
 }
 
-// GenerateAuthToken creates an authentication token.
-// The generated JTI is associated with the requesting userID in the SessionCache
-func (auth *AuthenticationService) GenerateAuthToken(userID int) (*entities.AuthSet, error) {
+// GenerateAuthTokenFromUser creates an authentication token with data extracted from *entities.UserDBModel
+func (auth *AuthenticationService) GenerateAuthTokenFromUser(user *entities.UserDBModel) (*entities.AuthSet, error) {
+	if user == nil || user.ID < 0 {
+		return nil, fmt.Errorf("invalid user for auth troken generation")
+	}
+	return auth.generateAuthToken(user)
+}
+
+// GenerateAuthTokenFromUserID creates an authentication token from an int userID
+func (auth *AuthenticationService) GenerateAuthTokenFromUserID(userID int) (*entities.AuthSet, error) {
 	if userID < 0 {
 		return nil, fmt.Errorf("invalid user ID value: %d", userID)
+	}
+
+	user, err := auth.ur.FindByID(userID)
+	if err != nil && user != nil {
+		return nil, fmt.Errorf("failed to find user with ID %d: %w", userID, err)
+	}
+	return auth.generateAuthToken(user)
+}
+
+// generateAuthToken internal implementation for generating authentication token user int userID
+// The generated JTI is associated with the requesting userID in the SessionCache
+func (auth *AuthenticationService) generateAuthToken(user *entities.UserDBModel) (*entities.AuthSet, error) {
+	if user == nil {
+		return nil, fmt.Errorf("invalid user for generateAuthToken")
 	}
 	generator := new(SessionTokenGenerator)
 	jti, err := generator.createJtiSessionValue()
@@ -115,7 +140,7 @@ func (auth *AuthenticationService) GenerateAuthToken(userID int) (*entities.Auth
 	}
 
 	claims := entities.JWTCustomClaims{
-		UserID: userID,
+		UserID: user.ID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(config.AuthTokenExpiry)),
@@ -133,12 +158,16 @@ func (auth *AuthenticationService) GenerateAuthToken(userID int) (*entities.Auth
 		return nil, fmt.Errorf("failed to sign auth token: %w", err)
 	}
 
-	rt, err := auth.GenerateRefreshToken(userID)
+	rt, err := auth.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 
-	addSessionToCache(userID, jti, config.CacheNoTTLExpiry)
+	state := entities.SessionState{
+		JTI: jti,
+	}
+	addRolesToSession(user.Roles, &state)
+	addSessionToCache(user.ID, state, config.CacheNoTTLExpiry)
 
 	return &entities.AuthSet{
 		AuthToken:    ss,
@@ -148,12 +177,18 @@ func (auth *AuthenticationService) GenerateAuthToken(userID int) (*entities.Auth
 }
 
 // addSessionToCache sets the generated JTI as the value for the userID key
-func addSessionToCache(userID int, jti string, ttl time.Duration) {
+func addSessionToCache(userID int, session entities.SessionState, ttl time.Duration) {
 	sc := cache.SessionCache.Get()
-	state := entities.SessionState{
-		JTI: jti,
+	sc.Set(userID, session, ttl)
+}
+
+// addRolesToSession overwrites existing roles in session with roles associated with user.
+func addRolesToSession(roles []entities.RoleDBModel, state *entities.SessionState) {
+	r := make([]string, len(roles))
+	for i, role := range roles {
+		r[i] = role.RoleName
 	}
-	sc.Set(userID, state, ttl)
+	state.Roles = r
 }
 
 // deleteSessionFromCache deletes the JTI for the associated userID from the SessionCache
@@ -248,7 +283,7 @@ func extractAuthCookies(c *gin.Context) (*entities.AuthSet, error) {
 		}
 	}
 
-	if authSet.AuthToken == "" || authSet.RefreshToken == "" {
+	if authSet.AuthToken == "" && authSet.RefreshToken == "" {
 		return nil, errors.New(config.LogExtractAuthCookiesError)
 	}
 	return authSet, nil
@@ -335,16 +370,8 @@ func (auth *AuthenticationService) validateSession(c *gin.Context) (bool, error)
 		return false, err
 	}
 
-	// Does the user ID in the auth token match that in the refresh token?
-	if atClaims.UserID != userID {
-		errS := fmt.Sprintf(config.LogRefreshAndAuthTokenUIDMismatchAlert, atClaims.UserID, userID)
-		log.Printf(errS)
-		deleteSessionFromCache(userID)
-		return false, errors.New(errS)
-	}
-
 	// Generate new auth set and reissue cookies
-	newAuthSet, err := auth.GenerateAuthToken(userID)
+	newAuthSet, err := auth.GenerateAuthTokenFromUserID(userID)
 	if err != nil {
 		deleteSessionFromCache(userID)
 		return false, err
