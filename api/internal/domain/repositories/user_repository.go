@@ -55,6 +55,7 @@ func (ur userRepository) FindByEmail(email string) (*entities.UserDBModel, error
 		return nil, errors.New("user not found")
 	}
 
+	log.Printf(config.LogUserFindByEmailSuccess, email)
 	return &user, nil
 }
 
@@ -70,5 +71,6 @@ func (ur userRepository) FindByID(id int) (*entities.UserDBModel, error) {
 		return nil, errors.New("user not found")
 	}
 
+	log.Printf(config.LogUserFindByIDSuccess, id)
 	return &user, nil
 }
