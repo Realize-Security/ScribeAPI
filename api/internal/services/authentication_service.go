@@ -166,7 +166,10 @@ func (auth *AuthenticationService) generateAuthToken(user *entities.UserDBModel)
 	state := entities.SessionState{
 		JTI: jti,
 	}
-	updateSessionPermissions(user.Roles, &state)
+	err = updateSessionPermissions(user.Roles, &state)
+	if err != nil {
+		return nil, err
+	}
 	addSessionToCache(user.ID, state, config.CacheNoTTLExpiry)
 
 	return &entities.AuthSet{
