@@ -24,6 +24,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	}
 }
 
+// Create a new user instance of entities.UserDBModel during registration.
 func (ur userRepository) Create(user *entities.UserDBModel) error {
 	if user == nil {
 		return errors.New("user cannot be nil")
@@ -43,6 +44,9 @@ func (ur userRepository) Create(user *entities.UserDBModel) error {
 	return nil
 }
 
+// TODO: Set up organisation constraint
+
+// FindByEmail finds a user by their email. Constrained to same organisation as requester.
 func (ur userRepository) FindByEmail(email string) (*entities.UserDBModel, error) {
 	var user entities.UserDBModel
 	result := ur.db.Raw("SELECT * FROM users WHERE users.email = @email  AND users.deleted_at IS NULL LIMIT 1",
@@ -59,6 +63,7 @@ func (ur userRepository) FindByEmail(email string) (*entities.UserDBModel, error
 	return &user, nil
 }
 
+// FindByID finds a user by their entities.UserDBModel.ID. Constrained to same organisation as requester.
 func (ur userRepository) FindByID(id int) (*entities.UserDBModel, error) {
 	var user entities.UserDBModel
 	result := ur.db.Raw("SELECT * FROM users WHERE users.id = @id  AND users.deleted_at IS NULL LIMIT 1",
