@@ -45,7 +45,7 @@ func (f *fakeUserRepo) FindByID(id int) (*entities.UserDBModel, error) {
 		Base: entities.Base{
 			ID: id,
 		},
-		Roles: []entities.RoleDBModel{},
+		Roles: []*entities.RoleDBModel{},
 	}, nil
 }
 
