@@ -32,9 +32,16 @@ func main() {
 	migrate(database.Db)
 	go database.DBHealthMonitor(dbConf)
 
-	// Initialise caches
+	err = seedRolesAndPermissions(database.Db)
+	if err != nil {
+		log.Printf("error seeding database: %v", err)
+		os.Exit(config.ExitCantCreate)
+	}
+
+	// Cache initialisation
 	cache.SessionCache.Get()
 
+	// Validators initialisation
 	validators.Validator = validators.InitValidator()
 
 	router := configureRouter()
