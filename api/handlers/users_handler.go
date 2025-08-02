@@ -18,10 +18,15 @@ func NewUserHandler(us *services.UserService, auth *services.AuthenticationServi
 }
 
 func (uh UserHandler) Users(r *gin.RouterGroup) {
-	users := r.Group("/api/users")
+	unauthenticated := r.Group("/api")
 	{
-		users.POST("/register", uh.us.RegisterUser)
-		users.POST("/login", uh.us.Login)
-		users.GET("/logout", uh.us.Logout)
+		unauthenticated.POST("/register", uh.us.RegisterUser)
+		unauthenticated.POST("/login", uh.us.Login)
+	}
+
+	authenticated := r.Group("/api")
+	authenticated.Use(uh.auth.IsAuthenticated())
+	{
+		unauthenticated.GET("/logout", uh.us.Logout)
 	}
 }
