@@ -166,7 +166,7 @@ func (auth *AuthenticationService) generateAuthToken(user *entities.UserDBModel)
 	state := entities.SessionState{
 		JTI: jti,
 	}
-	addRolesToSession(user.Roles, &state)
+	updateSessionPermissions(user.Roles, &state)
 	addSessionToCache(user.ID, state, config.CacheNoTTLExpiry)
 
 	return &entities.AuthSet{
@@ -182,13 +182,36 @@ func addSessionToCache(userID int, session entities.SessionState, ttl time.Durat
 	sc.Set(userID, session, ttl)
 }
 
-// addRolesToSession overwrites existing roles in session with roles associated with user.
-func addRolesToSession(roles []entities.RoleDBModel, state *entities.SessionState) {
-	r := make([]string, len(roles))
-	for i, role := range roles {
-		r[i] = role.RoleName
+// updateSessionPermissions overwrites existing roles in session with roles associated with user.
+func updateSessionPermissions(roles []*entities.RoleDBModel, state *entities.SessionState) error {
+	if state == nil {
+		return fmt.Errorf("session state cannot be nil")
 	}
-	state.Roles = r
+
+	if len(roles) == 0 {
+		state.PermissionIDs = nil
+		return nil
+	}
+
+	trackedPermissions := make(map[int]struct{})
+	var perms []int
+
+	for _, role := range roles {
+		if role == nil {
+			continue
+		}
+		for _, perm := range role.Permissions {
+			if perm == nil {
+				continue
+			}
+			if _, exists := trackedPermissions[perm.ID]; !exists {
+				trackedPermissions[perm.ID] = struct{}{}
+				perms = append(perms, perm.ID)
+			}
+		}
+	}
+	state.PermissionIDs = perms
+	return nil
 }
 
 // deleteSessionFromCache deletes the JTI for the associated userID from the SessionCache
