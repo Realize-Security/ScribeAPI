@@ -18,7 +18,7 @@ type UserDBModel struct {
 	OrganisationInviteToken *string             `gorm:"column:org_invite_token;type:varchar(255);unique"`
 	OrganisationID          string              `gorm:"column:organisation_id;type:varchar(255);default:NULL"`
 	Organisation            OrganisationDBModel `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;default:NULL"`
-	Roles                   []RoleDBModel       `gorm:"many2many:user_roles;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Roles                   []*RoleDBModel      `gorm:"many2many:user_roles;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (u *UserDBModel) TableName() string {
