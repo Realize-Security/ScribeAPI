@@ -108,7 +108,7 @@ func (us *UserService) Login(c *gin.Context) {
 		return
 	}
 
-	err = us.ar.LoginUser(token, c)
+	err = us.ar.Login(token, c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			config.ApiError: config.MessageInvalidCredentialsError,
@@ -122,7 +122,7 @@ func (us *UserService) Login(c *gin.Context) {
 }
 
 func (us *UserService) Logout(c *gin.Context) {
-	err := us.ar.LogoutUser(c)
+	err := us.ar.Logout(c)
 	if err != nil {
 		c.Writer.WriteHeader(http.StatusInternalServerError)
 	} else {

@@ -27,8 +27,8 @@ type AuthenticationRepository interface {
 	HashPassword(pwd string) (string, error)
 	GenerateAuthTokenFromUser(user *entities.UserDBModel) (*entities.AuthSet, error)
 	GenerateAuthTokenFromUserID(userID int) (*entities.AuthSet, error)
-	LoginUser(token *entities.AuthSet, c *gin.Context) error
-	LogoutUser(c *gin.Context) error
+	Login(token *entities.AuthSet, c *gin.Context) error
+	Logout(c *gin.Context) error
 	TokenClaimsFromRequestAndValidate(c *gin.Context) (entities.JWTCustomClaims, error)
 	GenerateRefreshToken(userID int) (string, error)
 	ValidateRefreshToken(token string) (int, error)
@@ -407,7 +407,7 @@ func (auth *AuthenticationService) validateSession(c *gin.Context) (bool, error)
 	return true, nil
 }
 
-func (auth *AuthenticationService) LoginUser(token *entities.AuthSet, c *gin.Context) error {
+func (auth *AuthenticationService) Login(token *entities.AuthSet, c *gin.Context) error {
 	if token == nil {
 		return errors.New("token AuthSet is nil")
 	}
@@ -424,7 +424,7 @@ func setLoginCookies(token *entities.AuthSet, c *gin.Context, domain string, sec
 	setCookieValue(c, config.UnsafeCookieIsAuthenticated, "true", "/", domain, int(config.RefreshTokenExpiry.Seconds()), secure, false)
 }
 
-func (auth *AuthenticationService) LogoutUser(c *gin.Context) error {
+func (auth *AuthenticationService) Logout(c *gin.Context) error {
 	claims, err := auth.TokenClaimsFromRequestAndValidate(c)
 	if err != nil {
 		log.Printf(config.LogLogoutTokenValidationFailed, err.Error())

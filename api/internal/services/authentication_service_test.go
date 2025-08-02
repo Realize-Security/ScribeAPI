@@ -309,7 +309,7 @@ func (s *AuthServiceTestSuite) TestLogoutUser() {
 		c.Request = req
 
 		// Perform logout
-		err = s.auth.LogoutUser(c)
+		err = s.auth.Logout(c)
 
 		// Verify the results
 		assert.NoError(s.T(), err)
@@ -345,7 +345,7 @@ func (s *AuthServiceTestSuite) TestLogoutUser() {
 		req := httptest.NewRequest("GET", "/api/logout", nil)
 		c.Request = req
 
-		err := s.auth.LogoutUser(c)
+		err := s.auth.Logout(c)
 
 		assert.Error(s.T(), err)
 		assert.Contains(s.T(), err.Error(), config.LogExtractAuthCookiesError)
@@ -360,7 +360,7 @@ func (s *AuthServiceTestSuite) TestLogoutUser() {
 		req.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: "invalid-refresh-token"})
 		c.Request = req
 
-		err := s.auth.LogoutUser(c)
+		err := s.auth.Logout(c)
 
 		assert.Error(s.T(), err)
 		assert.Contains(s.T(), err.Error(), "token is malformed")
@@ -490,7 +490,7 @@ func (s *AuthServiceTestSuite) TestLogoutClearsCache() {
 		req.AddCookie(&http.Cookie{Name: config.CookieRefreshToken, Value: authSet.RefreshToken})
 		c.Request = req
 
-		err = s.auth.LogoutUser(c)
+		err = s.auth.Logout(c)
 		assert.NoError(s.T(), err)
 
 		// Verify user was removed from cache
