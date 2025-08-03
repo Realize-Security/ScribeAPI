@@ -32,14 +32,23 @@ func main() {
 	migrate(database.Db)
 	go database.DBHealthMonitor(dbConf)
 
+	// Cache initialisation
+	cache.SessionCache.Get()
+	cache.PermissionIDCache.Get()
+
+	// Seed database
 	err = seedRolesAndPermissions(database.Db)
 	if err != nil {
 		log.Printf("error seeding database: %v", err)
 		os.Exit(config.ExitCantCreate)
 	}
 
-	// Cache initialisation
-	cache.SessionCache.Get()
+	// Cache Permissions
+	err = cachePermissionIDs(database.Db)
+	if err != nil {
+		log.Printf("error caching permissions: %v", err)
+		os.Exit(config.ExitCantCreate)
+	}
 
 	// Validators initialisation
 	validators.Validator = validators.InitValidator()
@@ -81,18 +90,24 @@ func configureRouter() *gin.Engine {
 func initialiseHandlers(r *gin.Engine) {
 	handlers.ApiHealthCheckRoutes(&r.RouterGroup)
 
-	ur := repositories.NewUserRepository(database.Db)
-	as, err := services.NewAuthenticationService(ur)
+	userRepository := repositories.NewUserRepository(database.Db)
+	authenticationService, err := services.NewAuthenticationService(userRepository)
 	if err != nil {
-		log.Printf("failed to initialise auth service: %s", err.Error())
+		log.Printf("failed to initialise authentication service: %s", err.Error())
 		os.Exit(config.ExitError)
 	}
 
-	us := services.NewUserServiceRepository(ur, as)
-	uh := handlers.NewUserHandler(us, as)
+	authorisationService, err := services.NewAuthorisationService(userRepository)
+	if err != nil {
+		log.Printf("failed to initialise authorisation service: %s", err.Error())
+		os.Exit(config.ExitError)
+	}
+
+	userServiceRepository := services.NewUserServiceRepository(userRepository, authenticationService)
+	userHandler := handlers.NewUserHandler(userServiceRepository, authenticationService, authorisationService)
 
 	// Register routes
-	uh.Users(&r.RouterGroup)
+	userHandler.Users(&r.RouterGroup)
 }
 
 func migrate(db *gorm.DB) {
