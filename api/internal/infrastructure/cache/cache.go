@@ -88,3 +88,10 @@ func (c *Cache[K, V]) Len() int {
 	defer c.mu.Unlock()
 	return len(c.data)
 }
+
+// Clear removes all entries from the cache.
+func (c *Cache[K, V]) Clear() {
+	c.mu.Lock()
+	clear(c.data)
+	c.mu.Unlock()
+}

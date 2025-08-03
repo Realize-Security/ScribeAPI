@@ -170,3 +170,56 @@ func TestCustomType(t *testing.T) {
 		t.Errorf("Retrieved Metadata[level] = %v, want 5", retrieved.Metadata["level"])
 	}
 }
+
+// TestLen tests the Len method for counting entries in the cache.
+func TestLen(t *testing.T) {
+	cache := New[string, int]()
+	if cache.Len() != 0 {
+		t.Errorf("Len() on empty cache = %d, want 0", cache.Len())
+	}
+
+	cache.Set("a", 1, 0)
+	cache.Set("b", 2, 0)
+	if cache.Len() != 2 {
+		t.Errorf("Len() after two sets = %d, want 2", cache.Len())
+	}
+
+	// Test with expired entry (not purged yet)
+	cache.Set("c", 3, 1*time.Millisecond)
+	time.Sleep(2 * time.Millisecond)
+	if cache.Len() != 3 {
+		t.Errorf("Len() with expired entry = %d, want 3", cache.Len())
+	}
+
+	// Purge by getting
+	_, _ = cache.Get("c")
+	if cache.Len() != 2 {
+		t.Errorf("Len() after purging expired = %d, want 2", cache.Len())
+	}
+}
+
+// TestClear tests the Clear method for removing all entries from the cache.
+func TestClear(t *testing.T) {
+	cache := New[string, int]()
+	cache.Set("a", 1, 0)
+	cache.Set("b", 2, 0)
+	if cache.Len() != 2 {
+		t.Errorf("Len() before clear = %d, want 2", cache.Len())
+	}
+
+	cache.Clear()
+
+	if cache.Len() != 0 {
+		t.Errorf("Len() after clear = %d, want 0", cache.Len())
+	}
+
+	_, ok := cache.Get("a")
+	if ok {
+		t.Error("Get(a) after clear returned ok=true")
+	}
+
+	_, ok = cache.Get("b")
+	if ok {
+		t.Error("Get(b) after clear returned ok=true")
+	}
+}
