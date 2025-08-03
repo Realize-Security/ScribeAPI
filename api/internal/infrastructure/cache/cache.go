@@ -81,3 +81,10 @@ func (s *Singleton[K, V]) Get() *Cache[K, V] {
 	})
 	return s.instance
 }
+
+// Len returns the number of entries in the cache.
+func (c *Cache[K, V]) Len() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return len(c.data)
+}
