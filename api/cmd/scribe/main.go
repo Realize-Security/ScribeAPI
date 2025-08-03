@@ -43,13 +43,6 @@ func main() {
 		os.Exit(config.ExitCantCreate)
 	}
 
-	// Cache Permissions
-	err = cachePermissionIDs(database.Db)
-	if err != nil {
-		log.Printf("error caching permissions: %v", err)
-		os.Exit(config.ExitCantCreate)
-	}
-
 	// Validators initialisation
 	validators.Validator = validators.InitValidator()
 
@@ -103,6 +96,13 @@ func initialiseHandlers(r *gin.Engine) {
 		os.Exit(config.ExitError)
 	}
 
+	// Cache Permissions
+	err = authorisationService.CachePermissionIDs()
+	if err != nil {
+		log.Printf("error caching permissions in main.go: %v", err)
+		os.Exit(config.ExitCantCreate)
+	}
+
 	userServiceRepository := services.NewUserServiceRepository(userRepository, authenticationService)
 	userHandler := handlers.NewUserHandler(userServiceRepository, authenticationService, authorisationService)
 
@@ -115,6 +115,8 @@ func migrate(db *gorm.DB) {
 	err := db.AutoMigrate(
 		&entities.UserDBModel{},
 		&entities.OrganisationDBModel{},
+		&entities.RoleDBModel{},
+		&entities.PermissionDBModel{},
 	)
 	if err != nil {
 		panic(err.Error())
