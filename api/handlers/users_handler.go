@@ -6,14 +6,16 @@ import (
 )
 
 type UserHandler struct {
-	us   *services.UserService
-	auth *services.AuthenticationService
+	us             *services.UserService
+	authentication *services.AuthenticationService
+	authorisation  *services.AuthorisationService
 }
 
-func NewUserHandler(us *services.UserService, auth *services.AuthenticationService) *UserHandler {
+func NewUserHandler(us *services.UserService, authentication *services.AuthenticationService, authorisation *services.AuthorisationService) *UserHandler {
 	return &UserHandler{
-		us:   us,
-		auth: auth,
+		us:             us,
+		authentication: authentication,
+		authorisation:  authorisation,
 	}
 }
 
@@ -25,7 +27,7 @@ func (uh UserHandler) Users(r *gin.RouterGroup) {
 	}
 
 	authenticated := r.Group("/api")
-	authenticated.Use(uh.auth.IsAuthenticated())
+	authenticated.Use(uh.authentication.IsAuthenticated())
 	{
 		unauthenticated.GET("/logout", uh.us.Logout)
 	}
