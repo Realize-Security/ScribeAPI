@@ -2,12 +2,10 @@ package main
 
 import (
 	"Scribe/internal/domain/entities"
-	"Scribe/internal/infrastructure/cache"
 	"Scribe/pkg/config"
 	"errors"
 	"fmt"
 	"gorm.io/gorm"
-	"log"
 )
 
 // RoleData defines types for clarity.
@@ -143,21 +141,4 @@ func seedRolesAndPermissions(db *gorm.DB) error {
 		}
 	}
 	return tx.Commit().Error
-}
-
-func cachePermissionIDs(db *gorm.DB) error {
-	var permissions []entities.PermissionDBModel
-	result := db.Raw("SELECT id, permission_name FROM permissions WHERE permissions.deleted_at IS NULL").Scan(&permissions)
-
-	if result.Error != nil || result.RowsAffected == 0 {
-		log.Print(config.LogFailedToRetrievePermissions)
-		return errors.New(config.LogFailedToRetrievePermissions)
-	}
-
-	permissionCache := cache.PermissionIDCache.Get()
-	for _, permission := range permissions {
-		permissionCache.Set(permission.PermissionName, permission.ID, config.CacheNoTTLExpiry)
-	}
-
-	return nil
 }
