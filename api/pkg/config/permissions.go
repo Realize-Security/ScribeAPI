@@ -1,5 +1,10 @@
 package config
 
+// Logging
+const (
+	LogFailedToRetrievePermissions = "failed to retrieve permissions"
+)
+
 // Permissions
 const (
 	// ProjectCreate allows permission to create a new project
