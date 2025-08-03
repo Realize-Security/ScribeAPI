@@ -2,9 +2,12 @@ package main
 
 import (
 	"Scribe/internal/domain/entities"
+	"Scribe/internal/infrastructure/cache"
 	"Scribe/pkg/config"
+	"errors"
 	"fmt"
 	"gorm.io/gorm"
+	"log"
 )
 
 // RoleData defines types for clarity.
@@ -66,7 +69,7 @@ func seedRolesAndPermissions(db *gorm.DB) error {
 
 	// Preload all existing permissions for efficiency.
 	var existingPerms []entities.PermissionDBModel
-	if err := tx.Find(&existingPerms).Error; err != nil {
+	if err := tx.Raw("SELECT * FROM permissions WHERE deleted_at IS NULL").Scan(&existingPerms).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to preload permissions: %w", err)
 	}
@@ -87,10 +90,8 @@ func seedRolesAndPermissions(db *gorm.DB) error {
 				continue
 			}
 
-			perm := entities.PermissionDBModel{
-				PermissionName: permData.PermName,
-			}
-			if err := tx.Create(&perm).Error; err != nil {
+			perm := entities.PermissionDBModel{}
+			if err := tx.Raw("INSERT INTO permissions (permission_name) VALUES (?) RETURNING *", permData.PermName).Scan(&perm).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("failed to create permission %s: %w", permData.PermName, err)
 			}
@@ -106,40 +107,57 @@ func seedRolesAndPermissions(db *gorm.DB) error {
 		}
 
 		var role entities.RoleDBModel
-		err := tx.Where("role_name = ?", roleData.RoleName).First(&role).Error
-		if err == gorm.ErrRecordNotFound {
-			role = entities.RoleDBModel{
-				RoleName:    roleData.RoleName,
-				Description: roleData.Description,
-			}
-			if err := tx.Create(&role).Error; err != nil {
-				tx.Rollback()
-				return fmt.Errorf("failed to create role %s: %w", roleData.RoleName, err)
-			}
-		} else if err != nil {
+		err := tx.Raw("SELECT * FROM roles WHERE role_name = ? AND deleted_at IS NULL LIMIT 1", roleData.RoleName).Scan(&role).Error
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			tx.Rollback()
 			return fmt.Errorf("error checking role %s: %w", roleData.RoleName, err)
 		}
 
-		// Update description if changed.
-		if role.Description != roleData.Description {
-			if err := tx.Model(&role).Update("description", roleData.Description).Error; err != nil {
+		if role.ID == 0 { // Assuming ID is uint and 0 means not found
+			if err := tx.Raw("INSERT INTO roles (role_name, description) VALUES (?, ?) RETURNING *", roleData.RoleName, roleData.Description).Scan(&role).Error; err != nil {
 				tx.Rollback()
-				return fmt.Errorf("failed to update description for role %s: %w", roleData.RoleName, err)
+				return fmt.Errorf("failed to create role %s: %w", roleData.RoleName, err)
+			}
+		} else {
+			// Update description if changed.
+			if role.Description != roleData.Description {
+				if err := tx.Exec("UPDATE roles SET description = ? WHERE id = ?", roleData.Description, role.ID).Error; err != nil {
+					tx.Rollback()
+					return fmt.Errorf("failed to update description for role %s: %w", roleData.RoleName, err)
+				}
 			}
 		}
 
-		// Collect permissions to associate.
-		var permsToAdd []*entities.PermissionDBModel
-		for _, permData := range roleData.Permissions {
-			permsToAdd = append(permsToAdd, createdPerms[permData.PermName])
+		// Replace associations: first delete existing, then insert new.
+		if err := tx.Exec("DELETE FROM role_permissions WHERE role_id = ?", role.ID).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to delete existing permissions for role %s: %w", roleData.RoleName, err)
 		}
 
-		// Replace associations to ensure exact match (removes old ones not in list).
-		if err := tx.Model(&role).Association("Permissions").Replace(permsToAdd); err != nil {
-			tx.Rollback()
-			return fmt.Errorf("failed to replace permissions for role %s: %w", roleData.RoleName, err)
+		for _, permData := range roleData.Permissions {
+			permID := createdPerms[permData.PermName].ID
+			if err := tx.Exec("INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)", role.ID, permID).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("failed to associate permission %s for role %s: %w", permData.PermName, roleData.RoleName, err)
+			}
 		}
 	}
 	return tx.Commit().Error
+}
+
+func cachePermissionIDs(db *gorm.DB) error {
+	var permissions []entities.PermissionDBModel
+	result := db.Raw("SELECT id, permission_name FROM permissions WHERE permissions.deleted_at IS NULL").Scan(&permissions)
+
+	if result.Error != nil || result.RowsAffected == 0 {
+		log.Print(config.LogFailedToRetrievePermissions)
+		return errors.New(config.LogFailedToRetrievePermissions)
+	}
+
+	permissionCache := cache.PermissionIDCache.Get()
+	for _, permission := range permissions {
+		permissionCache.Set(permission.PermissionName, permission.ID, config.CacheNoTTLExpiry)
+	}
+
+	return nil
 }
