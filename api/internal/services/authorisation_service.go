@@ -29,8 +29,8 @@ func NewAuthorisationService(ur repositories.UserRepository) (*AuthorisationServ
 	}, nil
 }
 
-// userHasPermission verifies user has all permissions for user creation
-func (auth *AuthorisationService) userHasPermission(c *gin.Context, requester *entities.UserDBModel, neededPermissions []string) {
+// UserHasPermission verifies user has all permissions for user creation
+func (auth *AuthorisationService) UserHasPermission(c *gin.Context, requester *entities.UserDBModel, neededPermissions []string) {
 	permissionCache := cache.PermissionIDCache.Get()
 	if permissionCache.Len() == 0 {
 		err := auth.CachePermissionIDs()
@@ -83,7 +83,7 @@ func (auth *AuthorisationService) LogFailedAuthorisation(requester *entities.Use
 func (auth *AuthorisationService) CreatNewUser(requester *entities.UserDBModel) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		neededPermissions := []string{config.UserList, config.UserCreate, config.UserRead}
-		auth.userHasPermission(c, requester, neededPermissions)
+		auth.UserHasPermission(c, requester, neededPermissions)
 	}
 }
 
