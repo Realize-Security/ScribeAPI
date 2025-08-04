@@ -6,6 +6,7 @@ import (
 	"Scribe/internal/infrastructure/cache"
 	"Scribe/internal/infrastructure/database"
 	"Scribe/pkg/config"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -49,7 +50,7 @@ func (auth *AuthorisationService) UserHasPermission(c *gin.Context, requester *e
 
 	needed, err := auth.GetIDsForPermissionStrings(neededPermissions)
 	if err != nil {
-		log.Print("unable to map permission names and IDs")
+		log.Printf("error getting permission IDs: %v", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -98,7 +99,8 @@ func (auth *AuthorisationService) CachePermissionIDs() error {
 }
 
 func (auth *AuthorisationService) GetIDsForPermissionStrings(names []string) (map[string]int, error) {
-	var needed map[string]int
+	needed := make(map[string]int, len(names))
+	var missing []string
 	permissionCache := cache.PermissionIDCache.Get()
 	if permissionCache.Len() == 0 {
 		err := auth.CachePermissionIDs()
@@ -112,7 +114,12 @@ func (auth *AuthorisationService) GetIDsForPermissionStrings(names []string) (ma
 		id, ok := permissionCache.Get(perm)
 		if ok {
 			needed[perm] = id
+		} else {
+			missing = append(missing, perm)
 		}
+	}
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("missing permission IDs for: %v", missing)
 	}
 	return needed, nil
 }
