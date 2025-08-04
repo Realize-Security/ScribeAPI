@@ -162,6 +162,5 @@ func TestLogFailedAuthorisation_NotFoundPermission(t *testing.T) {
 
 // Helper to format expected log; adjust based on actual config.LogUserUnauthorised format
 func formatExpectedLog(format string, userID int, perm string) string {
-	// Assuming format is like "User %d unauthorized for %s\n"
 	return fmt.Sprintf(format, userID, perm)
 }
