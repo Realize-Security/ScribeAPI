@@ -58,7 +58,7 @@ func TestUserHasPermission_MissingPermission(t *testing.T) {
 
 	// Set session with only one permission
 	sessionCache := cache.SessionCache.Get()
-	sessionCache.Set(1, entities.SessionState{PermissionIDs: []int{1}}, config.CacheNoTTLExpiry) // Has "user:list" (ID 1), missing others
+	sessionCache.Set(1, entities.SessionState{PermissionIDs: []int{1}}, config.CacheNoTTLExpiry) // Has "user_list" (ID 1), missing others
 
 	auth, _ := services.NewAuthorisationService(nil)
 
