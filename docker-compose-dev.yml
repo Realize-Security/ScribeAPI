@@ -21,9 +21,6 @@ services:
       - ./api:/go/src/api
     env_file:
       - ./db-variables-dev.env
-      - ./api-variables-dev.env
-      - ./cache-variables.env
-      - ./common-api-variables.env
     depends_on:
       - scribe_postgres
 

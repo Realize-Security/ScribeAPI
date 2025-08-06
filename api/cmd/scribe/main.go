@@ -8,6 +8,7 @@ import (
 	"Scribe/internal/infrastructure/cache"
 	"Scribe/internal/infrastructure/database"
 	"Scribe/internal/services"
+	"Scribe/internal/setup"
 	"Scribe/pkg/config"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,7 @@ func main() {
 	cache.PermissionIDCache.Get()
 
 	// Seed database
-	err = seedRolesAndPermissions(database.Db)
+	err = setup.SeedRolesAndPermissions(database.Db)
 	if err != nil {
 		log.Printf("error seeding database: %v", err)
 		os.Exit(config.ExitCantCreate)

@@ -1,4 +1,4 @@
-package main
+package setup
 
 import (
 	"Scribe/internal/domain/entities"
@@ -53,7 +53,7 @@ var defaultRoles = []RoleData{
 	},
 }
 
-func seedRolesAndPermissions(db *gorm.DB) error {
+func SeedRolesAndPermissions(db *gorm.DB) error {
 	tx := db.Begin()
 	if tx.Error != nil {
 		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
