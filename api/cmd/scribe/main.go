@@ -59,22 +59,24 @@ func configureRouter() *gin.Engine {
 		os.Exit(config.ExitCantCreate)
 	}
 
-	r.Use(cors.Default())
+	if isProduction() {
+		r.Use(cors.Default())
 
-	corsConfig := cors.Config{
-		AllowOrigins: []string{
-			"https://scribe-dev.realizesec.com",
-			"https://scribe-stage.realizesec.com",
-			"https://scribe.realizesec.com",
-		},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Cookie"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * 60 * 60,
+		corsConfig := cors.Config{
+			AllowOrigins: []string{
+				"https://scribe-dev.realizesec.com",
+				"https://scribe-stage.realizesec.com",
+				"https://scribe.realizesec.com",
+			},
+			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+			AllowHeaders:     []string{"Origin", "Content-Type", "Cookie"},
+			ExposeHeaders:    []string{"Content-Length"},
+			AllowCredentials: true,
+			MaxAge:           12 * 60 * 60,
+		}
+
+		r.Use(cors.New(corsConfig))
 	}
-
-	r.Use(cors.New(corsConfig))
 
 	initialiseHandlers(r)
 	return r
@@ -123,4 +125,8 @@ func migrate(db *gorm.DB) {
 		panic(err.Error())
 	}
 	log.Println("Database migration succeeded.")
+}
+
+func isProduction() bool {
+	return os.Getenv("DEPLOYMENT") == "production"
 }
