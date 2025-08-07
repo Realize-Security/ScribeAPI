@@ -1,0 +1,22 @@
+meta {
+  name: Register
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{hostname}}:{{port}}/api/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "firstName": "richard",
+    "lastName": "Curteis",
+    "email": "richard2@realizesec.com",
+    "password": "maryhadalittlelambwhosefleecewaswhiteassnow",
+    "confirmPassword": "maryhadalittlelambwhosefleecewaswhiteassnow",
+    "termsAccepted": true
+  }
+}
