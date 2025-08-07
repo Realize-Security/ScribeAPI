@@ -67,9 +67,7 @@ func (us *UserService) RegisterUser(c *gin.Context) {
 			config.ApiError: config.LogUserCreateFailed,
 		})
 	} else {
-		c.JSON(http.StatusCreated, gin.H{
-			config.ApiMessage: config.LogUserCreateSuccess,
-		})
+		c.Status(http.StatusCreated)
 	}
 	return
 }
