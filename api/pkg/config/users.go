@@ -6,6 +6,7 @@ const (
 	MessageInvalidCredentialsError = "Credentials did not match"
 	MessageMissingRequired         = "Missing required parameters."
 	MessageAccountLocked           = "Unable to log in.Please contact your administrator."
+	MessageTermsNotAccepted        = "terms and conditions not accepted"
 	LogUserCreateSuccess           = "User created successfully: %s"
 	LogUserCreateFailed            = "failed to create new user"
 	LogUserUpdateSuccess           = "user updated successfully: %s"
