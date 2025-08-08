@@ -13,6 +13,7 @@ type UserDBModel struct {
 	Email                   string         `db:"email" validate:"required,email"`
 	Password                string         `db:"password" validate:"required"`
 	IsActive                bool           `db:"is_active"`
+	TermsAccepted           bool           `db:"terms_accepted" validate:"required"`
 	BadUser                 bool           `db:"bad_user"`
 	BadUserReason           string         `db:"bad_user_reason"`
 	PasswordResetToken      *string        `db:"password_reset_token"`
