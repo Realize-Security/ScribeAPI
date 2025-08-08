@@ -3,9 +3,10 @@ package validators
 import (
 	"Scribe/internal/domain/entities"
 	"Scribe/pkg/config"
-	"github.com/go-playground/validator/v10"
 	"regexp"
 	"strings"
+
+	"github.com/go-playground/validator/v10"
 )
 
 var nameRegex = regexp.MustCompile(`^(?:[A-ZÀ-ÖØ-Þa-zà-öø-ÿ][A-ZÀ-ÖØ-Þa-zà-öø-ÿ']*(?:[-. ][A-ZÀ-ÖØ-Þa-zà-öø-ÿ][A-ZÀ-ÖØ-Þa-zà-öø-ÿ']*)*)?$`)

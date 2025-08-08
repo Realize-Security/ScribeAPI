@@ -5,15 +5,16 @@ import (
 	"Scribe/internal/infrastructure/cache"
 	"Scribe/pkg/config"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
 )
 
 type AuthServiceTestSuite struct {
@@ -45,7 +46,6 @@ func (f *fakeUserRepo) FindByID(id int) (*entities.UserDBModel, error) {
 		Base: entities.Base{
 			ID: id,
 		},
-		Roles: []*entities.RoleDBModel{},
 	}, nil
 }
 

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"Scribe/internal/services"
+
 	"github.com/gin-gonic/gin"
 )
 
