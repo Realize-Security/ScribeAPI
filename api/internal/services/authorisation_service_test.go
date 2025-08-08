@@ -41,7 +41,7 @@ func TestUserHasPermission_SessionNotFound(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	requester := &entities.UserDBModel{Base: entities.Base{ID: 1}}
+	requester := &entities.UserDBModel{ID: 1}
 	neededPermissions := []string{"user_list", "user_create"}
 
 	auth.UserHasPermission(c, requester, neededPermissions)
@@ -66,7 +66,7 @@ func TestUserHasPermission_MissingPermission(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	requester := &entities.UserDBModel{Base: entities.Base{ID: 1}}
+	requester := &entities.UserDBModel{ID: 1}
 	neededPermissions := []string{"user_list", "user_create", "user_read"}
 
 	// Capture log output
@@ -103,7 +103,7 @@ func TestUserHasPermission_HasAllPermissions(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	requester := &entities.UserDBModel{Base: entities.Base{ID: 1}}
+	requester := &entities.UserDBModel{ID: 1}
 	neededPermissions := []string{"user_list", "user_create", "user_read"}
 
 	// Capture log to ensure no failure log
@@ -124,7 +124,7 @@ func TestUserHasPermission_HasAllPermissions(t *testing.T) {
 func TestLogFailedAuthorisation_FoundPermission(t *testing.T) {
 	auth, _ := services.NewAuthorisationService(nil)
 
-	requester := &entities.UserDBModel{Base: entities.Base{ID: 1}}
+	requester := &entities.UserDBModel{ID: 1}
 	needed := map[string]int{"user_create": 2, "user_read": 3}
 	failedID := 2
 
@@ -145,7 +145,7 @@ func TestLogFailedAuthorisation_FoundPermission(t *testing.T) {
 func TestLogFailedAuthorisation_NotFoundPermission(t *testing.T) {
 	auth, _ := services.NewAuthorisationService(nil)
 
-	requester := &entities.UserDBModel{Base: entities.Base{ID: 1}}
+	requester := &entities.UserDBModel{ID: 1}
 	needed := map[string]int{"user_create": 2}
 	failedID := 999 // Not in needed
 

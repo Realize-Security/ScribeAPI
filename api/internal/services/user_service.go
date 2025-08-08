@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 type UserService struct {
@@ -57,6 +58,7 @@ func (us *UserService) RegisterUser(c *gin.Context) {
 	}
 
 	user := entities.UserDBModel{
+		UUID:      uuid.New().String(),
 		FirstName: newUser.FirstName,
 		LastName:  newUser.LastName,
 		Email:     newUser.Email,

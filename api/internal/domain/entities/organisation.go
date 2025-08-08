@@ -1,9 +1,17 @@
 package entities
 
-import "github.com/lib/pq"
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
 
 type OrganisationDBModel struct {
-	Base
+	ID                    int            `db:"id"`
+	UUID                  string         `db:"uuid"`
+	CreatedAt             time.Time      `db:"created_at"`
+	UpdatedAt             time.Time      `db:"updated_at"`
+	DeletedAt             *time.Time     `db:"deleted_at"`
 	Name                  string         `db:"name" json:"name" validate:"required"`
 	PrimaryContactName    string         `db:"primary_contact_name" json:"primaryContactName" validate:"required"`
 	PrimaryContactEmail   string         `db:"primary_contact_email" json:"primaryContactEmail" validate:"required,email"`

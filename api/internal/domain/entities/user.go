@@ -1,7 +1,13 @@
 package entities
 
+import "time"
+
 type UserDBModel struct {
-	Base
+	ID                      int            `db:"id"`
+	UUID                    string         `db:"uuid"`
+	CreatedAt               time.Time      `db:"created_at"`
+	UpdatedAt               time.Time      `db:"updated_at"`
+	DeletedAt               *time.Time     `db:"deleted_at"`
 	FirstName               string         `db:"first_name" validate:"required"`
 	LastName                string         `db:"last_name" validate:"required"`
 	Email                   string         `db:"email" validate:"required,email"`
