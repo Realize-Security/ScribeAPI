@@ -5,12 +5,10 @@ import (
 	"Scribe/internal/domain/repositories"
 	"Scribe/internal/domain/validators"
 	"Scribe/pkg/config"
-	"errors"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
 
@@ -35,16 +33,10 @@ func (us *UserService) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	err = validators.Validator.Struct(&newUser)
-	if err != nil {
-		var errs validator.ValidationErrors
-		errors.As(err, &errs)
-		for _, v := range errs {
-			println(v.Error())
-		}
-
+	validationErrors := validators.ValidateStruct(&newUser)
+	if len(validationErrors) > 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			config.ApiError: config.LogUserCreateFailed,
+			config.ValidationError: validationErrors,
 		})
 		return
 	}
@@ -58,11 +50,13 @@ func (us *UserService) RegisterUser(c *gin.Context) {
 	}
 
 	user := entities.UserDBModel{
-		UUID:      uuid.New().String(),
-		FirstName: newUser.FirstName,
-		LastName:  newUser.LastName,
-		Email:     newUser.Email,
-		Password:  hashed,
+		UUID:          uuid.New().String(),
+		FirstName:     newUser.FirstName,
+		LastName:      newUser.LastName,
+		Email:         newUser.Email,
+		Password:      hashed,
+		IsActive:      true,
+		TermsAccepted: true,
 	}
 
 	if e := us.ur.Create(&user); e != nil {
