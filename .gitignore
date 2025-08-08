@@ -1,3 +1,4 @@
 **/*.pem
 **/main
 **/refresh_secret
+.idea
