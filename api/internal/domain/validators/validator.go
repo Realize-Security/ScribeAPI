@@ -33,7 +33,7 @@ func ValidateStruct[T any](target T) map[string][]string {
 		var ve validator.ValidationErrors
 		if errors.As(err, &ve) {
 			for _, v := range ve {
-				msg := fmt.Sprintf("Field validation for '%s' failed on the '%s' tag", v.Field(), v.Tag())
+				msg := fmt.Sprintf("Validation for '%s' failed on '%s'", v.Field(), v.Tag())
 				log.Printf("validation error: %s", msg)
 				validationErrors[v.Namespace()] = append(validationErrors[v.Namespace()], msg)
 			}
