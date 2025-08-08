@@ -3,9 +3,12 @@ package setup
 import (
 	"Scribe/internal/domain/entities"
 	"Scribe/pkg/config"
+	"context"
+	"database/sql"
 	"errors"
 	"fmt"
-	"gorm.io/gorm"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // RoleData defines types for clarity.
@@ -53,22 +56,24 @@ var defaultRoles = []RoleData{
 	},
 }
 
-func SeedRolesAndPermissions(db *gorm.DB) error {
-	tx := db.Begin()
-	if tx.Error != nil {
-		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
+func SeedRolesAndPermissions(db *sqlx.DB) error {
+	ctx := context.Background()
+	tx, err := db.Beginx() // Start transaction
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
-		if r := recover(); r != nil {
+		if err != nil {
 			tx.Rollback()
-			panic(r)
+			return
 		}
+		err = tx.Commit()
 	}()
 
-	// Preload all existing permissions for efficiency.
+	// Preload existing permissions
 	var existingPerms []entities.PermissionDBModel
-	if err := tx.Raw("SELECT * FROM permissions WHERE deleted_at IS NULL").Scan(&existingPerms).Error; err != nil {
-		tx.Rollback()
+	err = tx.SelectContext(ctx, &existingPerms, "SELECT * FROM permissions WHERE deleted_at IS NULL")
+	if err != nil {
 		return fmt.Errorf("failed to preload permissions: %w", err)
 	}
 	createdPerms := make(map[string]*entities.PermissionDBModel)
@@ -77,68 +82,66 @@ func SeedRolesAndPermissions(db *gorm.DB) error {
 		createdPerms[perm.PermissionName] = perm
 	}
 
-	// Seed permissions if missing.
+	// Seed permissions if missing
 	for _, roleData := range defaultRoles {
 		for _, permData := range roleData.Permissions {
 			if permData.PermName == "" {
-				tx.Rollback()
 				return fmt.Errorf("empty permission name encountered")
 			}
 			if _, exists := createdPerms[permData.PermName]; exists {
 				continue
 			}
 
-			perm := entities.PermissionDBModel{}
-			if err := tx.Raw("INSERT INTO permissions (permission_name) VALUES (?) RETURNING *", permData.PermName).Scan(&perm).Error; err != nil {
-				tx.Rollback()
+			var perm entities.PermissionDBModel
+			err = tx.QueryRowxContext(ctx, "INSERT INTO permissions (permission_name) VALUES ($1) RETURNING *", permData.PermName).StructScan(&perm)
+			if err != nil {
 				return fmt.Errorf("failed to create permission %s: %w", permData.PermName, err)
 			}
-			createdPerms[permData.PermName] = &perm
+			createdPerms[perm.PermissionName] = &perm
 		}
 	}
 
-	// Seed or update roles and associate permissions.
+	// Seed or update roles and associate permissions
 	for _, roleData := range defaultRoles {
 		if roleData.RoleName == "" {
-			tx.Rollback()
 			return fmt.Errorf("empty role name encountered")
 		}
 
 		var role entities.RoleDBModel
-		err := tx.Raw("SELECT * FROM roles WHERE role_name = ? AND deleted_at IS NULL LIMIT 1", roleData.RoleName).Scan(&role).Error
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			tx.Rollback()
-			return fmt.Errorf("error checking role %s: %w", roleData.RoleName, err)
-		}
-
-		if role.ID == 0 { // Assuming ID is uint and 0 means not found
-			if err := tx.Raw("INSERT INTO roles (role_name, description) VALUES (?, ?) RETURNING *", roleData.RoleName, roleData.Description).Scan(&role).Error; err != nil {
-				tx.Rollback()
-				return fmt.Errorf("failed to create role %s: %w", roleData.RoleName, err)
+		err = tx.QueryRowxContext(ctx, "SELECT * FROM roles WHERE role_name = $1 AND deleted_at IS NULL LIMIT 1", roleData.RoleName).StructScan(&role)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				// Create new
+				err = tx.QueryRowxContext(ctx, "INSERT INTO roles (role_name, description) VALUES ($1, $2) RETURNING *", roleData.RoleName, roleData.Description).StructScan(&role)
+				if err != nil {
+					return fmt.Errorf("failed to create role %s: %w", roleData.RoleName, err)
+				}
+			} else {
+				return fmt.Errorf("error checking role %s: %w", roleData.RoleName, err)
 			}
 		} else {
-			// Update description if changed.
+			// Update description if changed
 			if role.Description != roleData.Description {
-				if err := tx.Exec("UPDATE roles SET description = ? WHERE id = ?", roleData.Description, role.ID).Error; err != nil {
-					tx.Rollback()
+				_, err = tx.ExecContext(ctx, "UPDATE roles SET description = $1 WHERE id = $2", roleData.Description, role.ID)
+				if err != nil {
 					return fmt.Errorf("failed to update description for role %s: %w", roleData.RoleName, err)
 				}
 			}
 		}
 
-		// Replace associations: first delete existing, then insert new.
-		if err := tx.Exec("DELETE FROM role_permissions WHERE role_id = ?", role.ID).Error; err != nil {
-			tx.Rollback()
+		// Replace associations: delete existing, then insert new
+		_, err = tx.ExecContext(ctx, "DELETE FROM role_permissions WHERE role_id = $1", role.ID)
+		if err != nil {
 			return fmt.Errorf("failed to delete existing permissions for role %s: %w", roleData.RoleName, err)
 		}
 
 		for _, permData := range roleData.Permissions {
 			permID := createdPerms[permData.PermName].ID
-			if err := tx.Exec("INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)", role.ID, permID).Error; err != nil {
-				tx.Rollback()
+			_, err = tx.ExecContext(ctx, "INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)", role.ID, permID)
+			if err != nil {
 				return fmt.Errorf("failed to associate permission %s for role %s: %w", permData.PermName, roleData.RoleName, err)
 			}
 		}
 	}
-	return tx.Commit().Error
+	return err
 }
