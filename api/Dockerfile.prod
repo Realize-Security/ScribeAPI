@@ -28,13 +28,4 @@ RUN apk add --no-cache bash && \
 
 RUN go build -o ./Scribe cmd/scribe/main.go
 
-# Image created: Dec 31, 1, 3:47:32 PM
-FROM gcr.io/distroless/base-debian12@sha256:8d946e4103571ec0e2f471eac7c4859a7f169686d222f5c8b2d9d391d6d1e50c AS deploy
-
-COPY --from=build /go/src/api/Scribe Scribe
-
-ENV GIN_MODE=release
-ENV GO_ENV=production
-ENV DEPLOYMENT=production
-
 CMD ["./Scribe"]
