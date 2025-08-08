@@ -1,6 +1,10 @@
 package validators
 
 import (
+	"errors"
+	"fmt"
+	"log"
+
 	"github.com/go-playground/validator/v10"
 )
 
@@ -17,4 +21,26 @@ func InitValidator() *validator.Validate {
 		panic(err)
 	}
 	return validate
+}
+
+// ValidateStruct is a generic function that validates any struct type T using the validator library.
+// It takes an instance of T (or *T), attempts to validate it (assuming T has validation tags),
+// and returns a map where keys are field namespaces (e.g., 'User.Name') and values are slices of error messages (to handle multiple failed tags per field).
+func ValidateStruct[T any](target T) map[string][]string {
+	validationErrors := make(map[string][]string)
+	err := Validator.Struct(target)
+	if err != nil {
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			for _, v := range ve {
+				msg := fmt.Sprintf("Field validation for '%s' failed on the '%s' tag", v.Field(), v.Tag())
+				log.Printf("validation error: %s", msg)
+				validationErrors[v.Namespace()] = append(validationErrors[v.Namespace()], msg)
+			}
+		} else {
+			log.Printf("validation error: %s", err.Error())
+			validationErrors["general"] = append(validationErrors["general"], err.Error())
+		}
+	}
+	return validationErrors
 }
