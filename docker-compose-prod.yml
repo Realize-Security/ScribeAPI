@@ -5,15 +5,17 @@ services:
     build:
       context: api
       dockerfile: Dockerfile.prod
-      target: deploy
+      target: build
     restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - scribe_api
+      - scribe_postgres
     env_file:
-      - ./db-variables.prod.env
-      - ./api-variables.prod.env
-      - ./common-api-variables.env
+      - ./db-variables-dev.env
     depends_on:
       - scribe_postgres
-    command: ./run
 
   scribe_postgres:
     container_name: scribe_postgres
