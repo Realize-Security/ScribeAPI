@@ -3,7 +3,7 @@ package config
 // Logging
 const (
 	LogFailedToRetrievePermissions = "failed to retrieve permissions"
-	LonUnableToCachePermissions    = "unable to cache permissions %v"
+	LogUnableToCachePermissions    = "unable to cache permissions %v"
 	LogUserUnauthorised            = "user %d unauthorised. missing permission %s"
 )
 
