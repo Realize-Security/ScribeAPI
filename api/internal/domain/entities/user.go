@@ -1,39 +1,18 @@
 package entities
 
-import (
-	"errors"
-	"gorm.io/gorm"
-)
-
 type UserDBModel struct {
 	Base
-	FirstName               string              `gorm:"column:first_name;type:varchar(255);not null"`
-	LastName                string              `gorm:"column:last_name;type:varchar(255);not null"`
-	Email                   string              `gorm:"column:email;type:varchar(255);unique;not null"`
-	Password                string              `gorm:"column:password;not null"`
-	IsActive                bool                `gorm:"column:is_active;default:true"`
-	BadUser                 bool                `gorm:"column:bad_user;default:false"`
-	BadUserReason           string              `gorm:"column:bad_user_reason;varchar(500);default:''"`
-	PasswordResetToken      *string             `gorm:"column:password_reset_token;type:varchar(255);unique"`
-	OrganisationInviteToken *string             `gorm:"column:org_invite_token;type:varchar(255);unique"`
-	OrganisationID          string              `gorm:"column:organisation_id;type:varchar(255);default:NULL"`
-	Organisation            OrganisationDBModel `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;default:NULL"`
-	Roles                   []*RoleDBModel      `gorm:"many2many:user_roles;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-}
-
-func (u *UserDBModel) TableName() string {
-	return "users"
-}
-
-func (u *UserDBModel) BeforeSave(tx *gorm.DB) error {
-	if u.BadUser && u.BadUserReason == "" {
-		return errors.New("BadUserReason must be provided when BadUser is true")
-	}
-
-	if !u.BadUser && u.BadUserReason != "" {
-		u.BadUserReason = ""
-	}
-	return nil
+	FirstName               string         `db:"first_name" validate:"required"`
+	LastName                string         `db:"last_name" validate:"required"`
+	Email                   string         `db:"email" validate:"required,email"`
+	Password                string         `db:"password" validate:"required"`
+	IsActive                bool           `db:"is_active"`
+	BadUser                 bool           `db:"bad_user"`
+	BadUserReason           string         `db:"bad_user_reason"`
+	PasswordResetToken      *string        `db:"password_reset_token"`
+	OrganisationInviteToken *string        `db:"org_invite_token"`
+	OrganisationID          *string        `db:"organisation_id"`
+	Roles                   []*RoleDBModel `db:"-"`
 }
 
 type UserRegistration struct {

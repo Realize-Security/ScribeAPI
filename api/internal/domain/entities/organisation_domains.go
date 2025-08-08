@@ -4,8 +4,8 @@ package entities
 // These can be both allow listed and deny listed domains.
 type OrganisationDomainDBModel struct {
 	Base
-	Domain       string              `gorm:"column:domain;type:varchar(255);unique;default:not null" json:"domain" binding:"required"`
-	IsValidated  bool                `gorm:"column:is_validated;not null;default:false"`
-	AllowList    bool                `gorm:"column:allow_list;not null;default:false"`
-	Organisation OrganisationDBModel `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;default:not null"`
+	Domain         string `db:"domain" json:"domain" binding:"required" validate:"required"`
+	IsValidated    bool   `db:"is_validated"`
+	AllowList      bool   `db:"allow_list"`
+	OrganisationID *int   `db:"organisation_id"`
 }

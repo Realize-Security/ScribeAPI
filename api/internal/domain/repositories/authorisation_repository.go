@@ -4,9 +4,11 @@ import (
 	"Scribe/internal/domain/entities"
 	"Scribe/internal/infrastructure/cache"
 	"Scribe/pkg/config"
-	"errors"
-	"gorm.io/gorm"
+	"context"
+	"fmt"
 	"log"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type AuthorisationRepository interface {
@@ -14,28 +16,28 @@ type AuthorisationRepository interface {
 }
 
 type authorisationRepository struct {
-	db *gorm.DB
+	db *sqlx.DB
 }
 
-func NewAuthorisationRepository(db *gorm.DB) AuthorisationRepository {
+func NewAuthorisationRepository(db *sqlx.DB) AuthorisationRepository {
 	return &authorisationRepository{
 		db: db,
 	}
 }
 
 func (ar authorisationRepository) CachePermissionIDs() error {
+	ctx := context.Background()
 	var permissions []entities.PermissionDBModel
-	result := ar.db.Raw("SELECT id, permission_name FROM permissions WHERE permissions.deleted_at IS NULL").Scan(&permissions)
-
-	if result.Error != nil || result.RowsAffected == 0 {
+	query := "SELECT id, permission_name FROM permissions WHERE deleted_at IS NULL"
+	err := ar.db.SelectContext(ctx, &permissions, query)
+	if err != nil {
 		log.Print(config.LogFailedToRetrievePermissions)
-		return errors.New(config.LogFailedToRetrievePermissions)
+		return fmt.Errorf("%s: %w", config.LogFailedToRetrievePermissions, err)
 	}
 
 	permissionCache := cache.PermissionIDCache.Get()
 	for _, permission := range permissions {
 		permissionCache.Set(permission.PermissionName, permission.ID, config.CacheNoTTLExpiry)
 	}
-
 	return nil
 }

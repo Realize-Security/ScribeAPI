@@ -2,7 +2,6 @@ package main
 
 import (
 	"Scribe/handlers"
-	"Scribe/internal/domain/entities"
 	"Scribe/internal/domain/repositories"
 	"Scribe/internal/domain/validators"
 	"Scribe/internal/infrastructure/cache"
@@ -10,15 +9,16 @@ import (
 	"Scribe/internal/services"
 	"Scribe/internal/setup"
 	"Scribe/pkg/config"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"log"
 	"os"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
-
 	dbConf := database.Config{
 		MaxIdle:             config.DBMaxIdleConnectionsValue,
 		MaxOpen:             config.DBMaxOpenConnectionsValue,
@@ -30,7 +30,7 @@ func main() {
 		log.Printf(config.DBInitialisationFailed, err.Error())
 		os.Exit(config.ExitBadConnection)
 	}
-	migrate(database.Db)
+	database.MigrateDb(database.Db)
 	go database.DBHealthMonitor(dbConf)
 
 	// Cache initialisation
@@ -38,7 +38,7 @@ func main() {
 	cache.PermissionIDCache.Get()
 
 	// Seed database
-	err = setup.SeedRolesAndPermissions(database.Db)
+	err = setup.SeedRolesAndPermissions(database.Db) // Updated to sqlx
 	if err != nil {
 		log.Printf("error seeding database: %v", err)
 		os.Exit(config.ExitCantCreate)
@@ -111,20 +111,6 @@ func initialiseHandlers(r *gin.Engine) {
 
 	// Register routes
 	userHandler.Users(&r.RouterGroup)
-}
-
-func migrate(db *gorm.DB) {
-	log.Println("Migrating database...")
-	err := db.AutoMigrate(
-		&entities.UserDBModel{},
-		&entities.OrganisationDBModel{},
-		&entities.RoleDBModel{},
-		&entities.PermissionDBModel{},
-	)
-	if err != nil {
-		panic(err.Error())
-	}
-	log.Println("Database migration succeeded.")
 }
 
 func isProduction() bool {

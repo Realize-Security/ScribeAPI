@@ -7,9 +7,10 @@ import (
 	"Scribe/internal/infrastructure/database"
 	"Scribe/pkg/config"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AuthorisationRepository interface {
@@ -105,7 +106,7 @@ func (auth *AuthorisationService) GetIDsForPermissionStrings(names []string) (ma
 	if permissionCache.Len() == 0 {
 		err := auth.CachePermissionIDs()
 		if err != nil {
-			log.Printf(config.LonUnableToCachePermissions, err)
+			log.Printf(config.LogUnableToCachePermissions, err)
 			return nil, err
 		}
 	}
