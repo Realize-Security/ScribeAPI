@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -92,8 +93,9 @@ func SeedRolesAndPermissions(db *sqlx.DB) error {
 				continue
 			}
 
+			newUUID := uuid.New().String()
 			var perm entities.PermissionDBModel
-			err = tx.QueryRowxContext(ctx, "INSERT INTO permissions (permission_name) VALUES ($1) RETURNING *", permData.PermName).StructScan(&perm)
+			err = tx.QueryRowxContext(ctx, "INSERT INTO permissions (uuid, permission_name) VALUES ($1, $2) RETURNING *", newUUID, permData.PermName).StructScan(&perm)
 			if err != nil {
 				return fmt.Errorf("failed to create permission %s: %w", permData.PermName, err)
 			}
@@ -112,7 +114,8 @@ func SeedRolesAndPermissions(db *sqlx.DB) error {
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				// Create new
-				err = tx.QueryRowxContext(ctx, "INSERT INTO roles (role_name, description) VALUES ($1, $2) RETURNING *", roleData.RoleName, roleData.Description).StructScan(&role)
+				newUUID := uuid.New().String()
+				err = tx.QueryRowxContext(ctx, "INSERT INTO roles (uuid, role_name, description) VALUES ($1, $2, $3) RETURNING *", newUUID, roleData.RoleName, roleData.Description).StructScan(&role)
 				if err != nil {
 					return fmt.Errorf("failed to create role %s: %w", roleData.RoleName, err)
 				}
