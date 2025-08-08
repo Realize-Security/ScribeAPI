@@ -2,9 +2,10 @@ package validators
 
 import (
 	"Scribe/internal/domain/entities"
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const validPass = "maryhadalittlelamb"

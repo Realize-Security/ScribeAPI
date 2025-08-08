@@ -13,8 +13,9 @@ import (
 	"Scribe/internal/services"
 	"Scribe/pkg/config"
 
-	"github.com/gin-gonic/gin"
 	"net/http/httptest"
+
+	"github.com/gin-gonic/gin"
 )
 
 func setupCaches() {
