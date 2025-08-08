@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS organisations (
     id SERIAL PRIMARY KEY,
-    uuid VARCHAR(255) UNIQUE,
+    uuid VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -9,11 +9,11 @@ CREATE TABLE IF NOT EXISTS organisations (
 
 CREATE TABLE IF NOT EXISTS organisation_domains (
     id SERIAL PRIMARY KEY,
-    uuid VARCHAR(255) UNIQUE,
+    uuid VARCHAR(255) UNIQUE NOT NULL,
     domain VARCHAR(255) UNIQUE NOT NULL,
     is_validated BOOLEAN DEFAULT FALSE,
     allow_list BOOLEAN DEFAULT FALSE,
-    organisation_id INTEGER NOT NULL,  -- Or VARCHAR(255) if organisations.id is string/UUID
+    organisation_id INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS organisation_domains (
 
 CREATE TABLE IF NOT EXISTS roles (
     id SERIAL PRIMARY KEY,
-    uuid VARCHAR(255) UNIQUE,
+    uuid VARCHAR(255) UNIQUE NOT NULL,
     role_name VARCHAR(255) UNIQUE NOT NULL,
     description VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS roles (
 
 CREATE TABLE IF NOT EXISTS permissions (
     id SERIAL PRIMARY KEY,
-    uuid VARCHAR(255) UNIQUE,
+    uuid VARCHAR(255) UNIQUE NOT NULL,
     permission_name VARCHAR(255) UNIQUE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -41,12 +41,13 @@ CREATE TABLE IF NOT EXISTS permissions (
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    uuid VARCHAR(255) UNIQUE,
+    uuid VARCHAR(255) UNIQUE NOT NULL,
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password TEXT NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
+    terms_accepted BOOLEAN DEFAULT TRUE,
     bad_user BOOLEAN DEFAULT FALSE,
     bad_user_reason VARCHAR(500) DEFAULT '',
     password_reset_token VARCHAR(255) UNIQUE,
