@@ -4,6 +4,7 @@ const (
 	MinUserLen                     = 1
 	MaxUserLen                     = 30
 	MessageInvalidCredentialsError = "Credentials did not match"
+	MessageUserIsBlocked           = "user blocked from logging in"
 	MessageMissingRequired         = "Missing required parameters."
 	MessageAccountLocked           = "Unable to log in.Please contact your administrator."
 	MessageTermsNotAccepted        = "terms and conditions not accepted"
