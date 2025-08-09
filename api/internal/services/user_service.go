@@ -77,6 +77,14 @@ func (us *UserService) Login(c *gin.Context) {
 		return
 	}
 
+	validationErrors := validators.ValidateStruct(&login)
+	if len(validationErrors) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			config.ValidationError: validationErrors,
+		})
+		return
+	}
+
 	user, err := us.ur.FindByEmail(login.Email)
 	if err != nil {
 		log.Printf(config.LogUserEmailSearchError, login.Email, err)
