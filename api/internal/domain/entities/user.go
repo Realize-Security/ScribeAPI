@@ -23,10 +23,10 @@ type UserDBModel struct {
 }
 
 type UserRegistration struct {
-	FirstName       string `json:"firstName" validate:"required,first_or_last_name"`
-	LastName        string `json:"lastName" validate:"required,first_or_last_name"`
+	FirstName       string `json:"firstName" validate:"required,name_length,name_pattern"`
+	LastName        string `json:"lastName" validate:"required,name_length,name_pattern"`
 	Email           string `json:"email" validate:"required,email"`
-	Password        string `json:"password" validate:"required,validate_password,eqfield=ConfirmPassword"`
+	Password        string `json:"password" validate:"required,passwords_match,password_length"`
 	ConfirmPassword string `json:"confirmPassword" validate:"required"`
 	TermsAccepted   bool   `json:"termsAccepted,default:false" validate:"required"`
 }

@@ -12,11 +12,23 @@ var Validator *validator.Validate
 
 func InitValidator() *validator.Validate {
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	err := validate.RegisterValidation("first_or_last_name", validateUsername)
+
+	err := validate.RegisterValidation("name_length", nameLength)
 	if err != nil {
 		panic(err)
 	}
-	err = validate.RegisterValidation("validate_password", validatePassword)
+
+	err = validate.RegisterValidation("name_pattern", namePattern)
+	if err != nil {
+		panic(err)
+	}
+
+	err = validate.RegisterValidation("passwords_match", passwordsMatch)
+	if err != nil {
+		panic(err)
+	}
+
+	err = validate.RegisterValidation("password_length", passwordLength)
 	if err != nil {
 		panic(err)
 	}
