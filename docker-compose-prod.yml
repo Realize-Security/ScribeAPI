@@ -26,7 +26,6 @@ services:
       - scribe_postgres
     volumes:
       - scribe_postgres_data:/var/lib/postgresql/data
-      - ./db_scripts:/docker-entrypoint-initdb.d/
     env_file:
       - ./db-variables-dev.env
 
