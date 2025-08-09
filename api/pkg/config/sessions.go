@@ -49,7 +49,7 @@ const (
 	LogLogoutTokenValidationFailed           = "failed to validate token for logout: %s"
 	LogLogoutUserSuccess                     = "logged out user: %d"
 	LogHashingError                          = "error hashing password"
-	LogHashingErrorForLoginEmail             = "password mismatch for user identifier: %s"
+	LogHashingSuccessForUser                 = "password hashing success for: '%s'"
 	LogHashingErrorForUser                   = "error hashing password for: %s"
 	LogHashesDontMatch                       = "hashes don't match"
 	LogExtractAuthCookiesError               = "error extracting auth tokens from cookie: %s"

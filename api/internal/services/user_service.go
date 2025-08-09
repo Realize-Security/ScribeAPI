@@ -103,11 +103,13 @@ func (us *UserService) Login(c *gin.Context) {
 	}
 
 	if !us.ar.PasswordsMatch(user.Password, login.Password) {
-		log.Printf(config.LogHashingErrorForLoginEmail, user.Email)
+		log.Printf(config.LogHashingErrorForUser, user.UUID)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			config.ApiError: config.MessageInvalidCredentialsError,
 		})
 		return
+	} else {
+		log.Printf(config.LogHashingSuccessForUser, user.UUID)
 	}
 
 	token, err := us.ar.GenerateAuthTokenFromUserID(user.ID)
