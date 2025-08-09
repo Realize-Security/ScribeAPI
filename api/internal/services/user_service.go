@@ -79,8 +79,17 @@ func (us *UserService) Login(c *gin.Context) {
 
 	user, err := us.ur.FindByEmail(login.Email)
 	if err != nil {
+		log.Printf(config.LogUserEmailSearchError, login.Email, err)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			config.ApiError: config.MessageInvalidCredentialsError,
+		})
+		return
+	}
+
+	if user.BadUser {
+		log.Printf(config.LogBadUserLoginBlocked, user.UUID)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			config.ApiError: config.MessageUserIsBlocked,
 		})
 		return
 	}
@@ -95,7 +104,7 @@ func (us *UserService) Login(c *gin.Context) {
 
 	token, err := us.ar.GenerateAuthTokenFromUserID(user.ID)
 	if err != nil {
-		log.Printf(config.LogHashingErrorForUserID, user.ID)
+		log.Printf(config.LogHashingErrorForUser, user.UUID)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			config.ApiError: config.MessageInvalidCredentialsError,
 		})
@@ -104,6 +113,7 @@ func (us *UserService) Login(c *gin.Context) {
 
 	err = us.ar.Login(token, c)
 	if err != nil {
+		log.Printf(config.LogLoginFailed, user.UUID, err)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			config.ApiError: config.MessageInvalidCredentialsError,
 		})
