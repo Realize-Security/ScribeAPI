@@ -32,6 +32,12 @@ func InitValidator() *validator.Validate {
 	if err != nil {
 		panic(err)
 	}
+
+	err = validate.RegisterValidation("email_not_in_password", emailNotInPassword)
+	if err != nil {
+		panic(err)
+	}
+
 	return validate
 }
 

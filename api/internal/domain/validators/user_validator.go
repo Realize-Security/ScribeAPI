@@ -4,6 +4,7 @@ import (
 	"Scribe/internal/domain/entities"
 	"Scribe/pkg/config"
 	"regexp"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -31,6 +32,16 @@ func passwordsMatch(fl validator.FieldLevel) bool {
 func passwordLength(fl validator.FieldLevel) bool {
 	password := fl.Field().String()
 	return len(password) >= config.MinPasswordLength
+}
+
+func emailNotInPassword(fl validator.FieldLevel) bool {
+	user, ok := fl.Parent().Interface().(entities.UserRegistration)
+	if !ok {
+		return false
+	}
+	pass := strings.ToLower(user.Password)
+	email := strings.ToLower(user.Email)
+	return !strings.Contains(pass, email) && !strings.Contains(pass, reverseString(email))
 }
 
 func reverseString(s string) string {
