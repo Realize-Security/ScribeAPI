@@ -25,7 +25,7 @@ func InitValidator() *validator.Validate {
 
 // ValidateStruct is a generic function that validates any struct type T using the validator library.
 // It takes an instance of T (or *T), attempts to validate it (assuming T has validation tags),
-// and returns a map where keys are field namespaces (e.g., 'User.Name') and values are slices of error messages (to handle multiple failed tags per field).
+// and returns a map where keys are field namespaces (e.g., 'User.Name') and values are slices of error messages to handle multiple failed tags per field.
 func ValidateStruct[T any](target T) map[string][]string {
 	validationErrors := make(map[string][]string)
 	err := Validator.Struct(target)
