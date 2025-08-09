@@ -39,8 +39,8 @@ func (ur *userRepository) Create(user *entities.UserDBModel) error {
 	}
 
 	query := `
-		INSERT INTO users (first_name, last_name, email, password, is_active, bad_user, bad_user_reason, password_reset_token, org_invite_token, uuid, created_at, updated_at)
-		VALUES (:first_name, :last_name, :email, :password, :is_active, :bad_user, :bad_user_reason, :password_reset_token, :org_invite_token, :uuid, :created_at, :updated_at)`
+		INSERT INTO users (first_name, last_name, email, password, is_active, bad_user, bad_user_reason, password_reset_token, org_invite_token, uuid)
+		VALUES (:first_name, :last_name, :email, :password, :is_active, :bad_user, :bad_user_reason, :password_reset_token, :org_invite_token, :uuid)`
 	_, err := ur.db.NamedExec(query, user)
 	if err != nil {
 		log.Print(config.LogUserCreateFailed)
