@@ -93,9 +93,8 @@ func SeedRolesAndPermissions(db *sqlx.DB) error {
 				continue
 			}
 
-			newUUID := uuid.New().String()
 			var perm entities.PermissionDBModel
-			err = tx.QueryRowxContext(ctx, "INSERT INTO permissions (uuid, permission_name) VALUES ($1, $2) RETURNING *", newUUID, permData.PermName).StructScan(&perm)
+			err = tx.QueryRowxContext(ctx, "INSERT INTO permissions (permission_name) VALUES ($1) RETURNING *", permData.PermName).StructScan(&perm)
 			if err != nil {
 				return fmt.Errorf("failed to create permission %s: %w", permData.PermName, err)
 			}
