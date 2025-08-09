@@ -1,6 +1,9 @@
 package entities
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type UserDBModel struct {
 	ID                      int            `db:"id"`
@@ -29,6 +32,12 @@ type UserRegistration struct {
 	Password        string `json:"password" validate:"required,passwords_match,password_length"`
 	ConfirmPassword string `json:"confirmPassword" validate:"required"`
 	TermsAccepted   bool   `json:"termsAccepted,default:false" validate:"required"`
+}
+
+func (u *UserRegistration) Sanitize() {
+	u.FirstName = strings.TrimSpace(u.FirstName)
+	u.LastName = strings.TrimSpace(u.LastName)
+	u.Email = strings.TrimSpace(strings.ToLower(u.Email))
 }
 
 type UserLogin struct {

@@ -109,7 +109,7 @@ func TestNamePattern(t *testing.T) {
 		{"Starting with space", " John", false},
 		{"Ending with space", "John ", false},
 		{"Starting with hyphen", "-John", false},
-		{"Empty string", "", true}, // Empty string matches the optional pattern
+		{"Empty string", "", true},
 		{"Only special characters", "@#$", false},
 	}
 

@@ -32,6 +32,7 @@ func (us *UserService) RegisterUser(c *gin.Context) {
 		c.Writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	newUser.Sanitize()
 
 	validationErrors := validators.ValidateStruct(&newUser)
 	if len(validationErrors) > 0 {
