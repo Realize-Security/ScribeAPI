@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type UserService struct {
@@ -51,7 +50,6 @@ func (us *UserService) RegisterUser(c *gin.Context) {
 	}
 
 	user := entities.UserDBModel{
-		UUID:          uuid.New().String(),
 		FirstName:     newUser.FirstName,
 		LastName:      newUser.LastName,
 		Email:         newUser.Email,
