@@ -1,0 +1,20 @@
+ALTER TABLE organisations
+    ALTER COLUMN uuid TYPE VARCHAR(255) USING uuid::text,
+    ALTER COLUMN uuid DROP DEFAULT;
+
+ALTER TABLE organisation_domains
+    ALTER COLUMN uuid TYPE VARCHAR(255) USING uuid::text,
+    ALTER COLUMN uuid DROP DEFAULT;
+
+ALTER TABLE roles
+    ALTER COLUMN uuid TYPE VARCHAR(255) USING uuid::text,
+    ALTER COLUMN uuid DROP DEFAULT;
+
+ALTER TABLE permissions
+    ALTER COLUMN uuid TYPE VARCHAR(255) USING uuid::text,
+    ALTER COLUMN uuid DROP DEFAULT;
+
+ALTER TABLE users
+    ALTER COLUMN uuid TYPE VARCHAR(255) USING uuid::text,
+    ALTER COLUMN uuid DROP DEFAULT;
+
