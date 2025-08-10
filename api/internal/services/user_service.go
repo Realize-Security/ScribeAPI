@@ -23,7 +23,8 @@ func NewUserServiceRepository(ur repositories.UserRepository, ar AuthenticationR
 	}
 }
 
-func (us *UserService) RegisterUser(c *gin.Context) {
+// SelfRegistration is used by users to create an account
+func (us *UserService) SelfRegistration(c *gin.Context) {
 	var newUser entities.UserRegistration
 	err := c.BindJSON(&newUser)
 	if err != nil {
