@@ -36,3 +36,17 @@ const (
 	// UserToggleEnabled allows permission to disable and enable user accounts
 	UserToggleEnabled = "toggle_enabled_user"
 )
+
+// Organisations
+const (
+	// OrganisationCreate allows permission to create a new organisation
+	OrganisationCreate = "create_organisation"
+	// OrganisationList allows permission to list existing organisations
+	OrganisationList = "list_organisation"
+	// OrganisationRead allows permission to view organisations
+	OrganisationRead = "read_organisation"
+	// OrganisationUpdate allows permission to update organisations
+	OrganisationUpdate = "update_organisation"
+	// OrganisationDelete allows permission to delete organisations
+	OrganisationDelete = "delete_organisation"
+)

@@ -35,6 +35,9 @@ var defaultRoles = []RoleData{
 			// Users
 			{config.UserCreate}, {config.UserUpdate}, {config.UserList},
 			{config.UserRead}, {config.UserDelete}, {config.UserToggleEnabled},
+			// Organisations
+			{config.OrganisationCreate}, {config.OrganisationUpdate}, {config.OrganisationList},
+			{config.OrganisationRead}, {config.OrganisationDelete},
 		},
 	},
 	{
@@ -53,6 +56,15 @@ var defaultRoles = []RoleData{
 			// Projects
 			{config.ProjectCreate}, {config.ProjectList}, {config.ProjectRead},
 			{config.ProjectUpdate}, {config.ProjectDelete},
+		},
+	},
+	{
+		RoleName:    "ClientOrganisationAdministrator",
+		Description: "Users with this role may administer organisations to which they belong.",
+		Permissions: []PermData{
+			// Organisations
+			{config.OrganisationCreate}, {config.OrganisationUpdate}, {config.OrganisationList},
+			{config.OrganisationRead}, {config.OrganisationDelete},
 		},
 	},
 }
