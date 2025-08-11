@@ -3,7 +3,7 @@ package entities
 import "time"
 
 type RoleDBModel struct {
-	ID          int                  `db:"id"`
+	ID          int64                `db:"id"`
 	UUID        string               `db:"uuid"`
 	CreatedAt   time.Time            `db:"created_at"`
 	UpdatedAt   time.Time            `db:"updated_at"`
@@ -14,7 +14,7 @@ type RoleDBModel struct {
 }
 
 type PermissionDBModel struct {
-	ID             int        `db:"id"`
+	ID             int64      `db:"id"`
 	UUID           string     `db:"uuid"`
 	CreatedAt      time.Time  `db:"created_at"`
 	UpdatedAt      time.Time  `db:"updated_at"`

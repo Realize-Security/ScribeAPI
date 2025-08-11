@@ -95,14 +95,6 @@ func (us *UserService) Login(c *gin.Context) {
 		return
 	}
 
-	if user.BadUser {
-		log.Printf(config.LogBadUserLoginBlocked, user.UUID)
-		c.JSON(http.StatusUnauthorized, gin.H{
-			config.ApiError: config.MessageUserIsBlocked,
-		})
-		return
-	}
-
 	if !us.ar.PasswordsMatch(user.Password, login.Password) {
 		log.Printf(config.LogHashingErrorForUser, user.UUID)
 		c.JSON(http.StatusUnauthorized, gin.H{

@@ -9,21 +9,21 @@ type AuthSet struct {
 }
 
 type JWTCustomClaims struct {
-	UserID  int
+	UserID  int64
 	TokenID string
 	jwt.RegisteredClaims
 }
 
 type SessionState struct {
 	JTI           string
-	PermissionIDs []int
+	PermissionIDs []int64
 }
 
 type Claims interface {
 	GetUserID() (string, error)
 }
 
-func (c JWTCustomClaims) GetUserID() (int, error) {
+func (c JWTCustomClaims) GetUserID() (int64, error) {
 	return c.UserID, nil
 }
 

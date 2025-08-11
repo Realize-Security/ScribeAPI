@@ -26,11 +26,11 @@ type AuthenticationRepository interface {
 	PasswordsMatch(hashed, plain string) bool
 	HashPassword(pwd string) (string, error)
 	GenerateAuthTokenFromUser(user *entities.UserDBModel) (*entities.AuthSet, error)
-	GenerateAuthTokenFromUserID(userID int) (*entities.AuthSet, error)
+	GenerateAuthTokenFromUserID(userID int64) (*entities.AuthSet, error)
 	Login(token *entities.AuthSet, c *gin.Context) error
 	Logout(c *gin.Context) error
 	TokenClaimsFromRequestAndValidate(c *gin.Context) (entities.JWTCustomClaims, error)
-	GenerateRefreshToken(userID int) (string, error)
+	GenerateRefreshToken(userID int64) (string, error)
 	ValidateRefreshToken(token string) (int, error)
 }
 
@@ -115,7 +115,7 @@ func (auth *AuthenticationService) GenerateAuthTokenFromUser(user *entities.User
 }
 
 // GenerateAuthTokenFromUserID creates an authentication token from an int userID
-func (auth *AuthenticationService) GenerateAuthTokenFromUserID(userID int) (*entities.AuthSet, error) {
+func (auth *AuthenticationService) GenerateAuthTokenFromUserID(userID int64) (*entities.AuthSet, error) {
 	if userID < 0 {
 		return nil, fmt.Errorf("invalid user ID value: %d", userID)
 	}
@@ -180,7 +180,7 @@ func (auth *AuthenticationService) generateAuthToken(user *entities.UserDBModel)
 }
 
 // addSessionToCache sets the generated JTI as the value for the userID key
-func addSessionToCache(userID int, session entities.SessionState, ttl time.Duration) {
+func addSessionToCache(userID int64, session entities.SessionState, ttl time.Duration) {
 	sc := cache.SessionCache.Get()
 	sc.Set(userID, session, ttl)
 }
@@ -196,8 +196,8 @@ func updateSessionPermissions(roles []*entities.RoleDBModel, state *entities.Ses
 		return nil
 	}
 
-	trackedPermissions := make(map[int]struct{})
-	var perms []int
+	trackedPermissions := make(map[int64]struct{})
+	var perms []int64
 
 	for _, role := range roles {
 		if role == nil {
@@ -223,7 +223,7 @@ func deleteSessionFromCache(userID int) {
 	sc.Delete(userID)
 }
 
-func (auth *AuthenticationService) GenerateRefreshToken(userID int) (string, error) {
+func (auth *AuthenticationService) GenerateRefreshToken(userID int64) (string, error) {
 	claims := entities.JWTCustomClaims{
 		UserID:  userID,
 		TokenID: uuid.Must(uuid.NewV4()).String(),

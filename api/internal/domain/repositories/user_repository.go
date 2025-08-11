@@ -15,7 +15,7 @@ import (
 type UserRepository interface {
 	Create(user *entities.UserDBModel) error
 	FindByEmail(email string) (*entities.UserDBModel, error)
-	FindByID(id int) (*entities.UserDBModel, error)
+	FindByID(id int64) (*entities.UserDBModel, error)
 }
 
 type userRepository struct {
@@ -72,7 +72,7 @@ func (ur *userRepository) FindByEmail(email string) (*entities.UserDBModel, erro
 }
 
 // FindByID finds a user by their entities.UserDBModel.ID. Constrained to same organisation as requester.
-func (ur *userRepository) FindByID(id int) (*entities.UserDBModel, error) {
+func (ur *userRepository) FindByID(id int64) (*entities.UserDBModel, error) {
 	ctx := context.Background()
 	var user entities.UserDBModel
 	query := "SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL LIMIT 1"
@@ -90,7 +90,7 @@ func (ur *userRepository) FindByID(id int) (*entities.UserDBModel, error) {
 	return &user, nil
 }
 
-func (ur *userRepository) fetchRolesForUser(userID int) ([]*entities.RoleDBModel, error) {
+func (ur *userRepository) fetchRolesForUser(userID int64) ([]*entities.RoleDBModel, error) {
 	var roles []*entities.RoleDBModel
 	query := `
         SELECT r.* 
@@ -114,7 +114,7 @@ func (ur *userRepository) fetchRolesForUser(userID int) ([]*entities.RoleDBModel
 	return roles, nil
 }
 
-func (ur *userRepository) fetchPermissionsForRole(roleID int) ([]*entities.PermissionDBModel, error) {
+func (ur *userRepository) fetchPermissionsForRole(roleID int64) ([]*entities.PermissionDBModel, error) {
 	var perms []*entities.PermissionDBModel
 	query := `
         SELECT p.* 

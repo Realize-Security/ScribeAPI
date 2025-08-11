@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	SessionCache      Singleton[int, entities.SessionState]
-	PermissionIDCache Singleton[string, int]
+	SessionCache      Singleton[int64, entities.SessionState]
+	PermissionIDCache Singleton[string, int64]
 )
 
 // Entry holds the value and its expiration time.

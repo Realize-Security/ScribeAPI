@@ -99,8 +99,8 @@ func (auth *AuthorisationService) CachePermissionIDs() error {
 	return nil
 }
 
-func (auth *AuthorisationService) GetIDsForPermissionStrings(names []string) (map[string]int, error) {
-	needed := make(map[string]int, len(names))
+func (auth *AuthorisationService) GetIDsForPermissionStrings(names []string) (map[string]int64, error) {
+	needed := make(map[string]int64, len(names))
 	var missing []string
 	permissionCache := cache.PermissionIDCache.Get()
 	if permissionCache.Len() == 0 {
