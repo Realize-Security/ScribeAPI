@@ -32,7 +32,7 @@ type AuthenticationRepository interface {
 	Logout(c *gin.Context) error
 	TokenClaimsFromRequestAndValidate(c *gin.Context) (entities.JWTCustomClaims, error)
 	GenerateRefreshToken(userID int64) (string, error)
-	ValidateRefreshToken(token string) (int, error)
+	ValidateRefreshToken(token string) (int64, error)
 }
 
 type AuthenticationService struct {
