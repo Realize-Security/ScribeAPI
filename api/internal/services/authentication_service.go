@@ -10,15 +10,16 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/alexedwards/argon2id"
-	"github.com/gin-gonic/gin"
-	"github.com/gofrs/uuid"
-	"github.com/golang-jwt/jwt/v5"
 	"log"
 	"net/http"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/alexedwards/argon2id"
+	"github.com/gin-gonic/gin"
+	"github.com/gofrs/uuid"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthenticationRepository interface {
@@ -218,7 +219,7 @@ func updateSessionPermissions(roles []*entities.RoleDBModel, state *entities.Ses
 }
 
 // deleteSessionFromCache deletes the JTI for the associated userID from the SessionCache
-func deleteSessionFromCache(userID int) {
+func deleteSessionFromCache(userID int64) {
 	sc := cache.SessionCache.Get()
 	sc.Delete(userID)
 }
@@ -258,7 +259,7 @@ func validateTokenSignature(auth *AuthenticationService, tokenString string) (jw
 	return *token, nil
 }
 
-func (auth *AuthenticationService) ValidateRefreshToken(tokenString string) (int, error) {
+func (auth *AuthenticationService) ValidateRefreshToken(tokenString string) (int64, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &entities.JWTCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
