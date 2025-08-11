@@ -19,8 +19,8 @@ type AuthorisationRepository interface {
 
 type AuthorisationService struct {
 	ur              repositories.UserRepository
-	sessionCache    *cache.Cache[int, entities.SessionState]
-	permissionCache *cache.Cache[string, int]
+	sessionCache    *cache.Cache[int64, entities.SessionState]
+	permissionCache *cache.Cache[string, int64]
 }
 
 func NewAuthorisationService(ur repositories.UserRepository) (*AuthorisationService, error) {
@@ -56,7 +56,7 @@ func (auth *AuthorisationService) UserHasPermission(c *gin.Context, requester *e
 		return
 	}
 
-	userPermMap := make(map[int]bool, len(userSession.PermissionIDs))
+	userPermMap := make(map[int64]bool, len(userSession.PermissionIDs))
 	for _, permID := range userSession.PermissionIDs {
 		userPermMap[permID] = true
 	}
@@ -71,7 +71,7 @@ func (auth *AuthorisationService) UserHasPermission(c *gin.Context, requester *e
 	return
 }
 
-func (auth *AuthorisationService) LogFailedAuthorisation(requester *entities.UserDBModel, needed map[string]int, failedID int) {
+func (auth *AuthorisationService) LogFailedAuthorisation(requester *entities.UserDBModel, needed map[string]int64, failedID int64) {
 	for key, value := range needed {
 		if value == failedID {
 			log.Printf(config.LogUserUnauthorised, requester.ID, key)
