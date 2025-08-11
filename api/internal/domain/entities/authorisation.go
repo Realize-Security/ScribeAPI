@@ -3,21 +3,25 @@ package entities
 import "time"
 
 type RoleDBModel struct {
-	ID          int64                `db:"id"`
-	UUID        string               `db:"uuid"`
-	CreatedAt   time.Time            `db:"created_at"`
-	UpdatedAt   time.Time            `db:"updated_at"`
-	DeletedAt   *time.Time           `db:"deleted_at"`
-	RoleName    string               `db:"role_name" validate:"required"`
-	Description string               `db:"description" validate:"required"`
-	Permissions []*PermissionDBModel `db:"-"`
+	ID             int64                `db:"id"`
+	UUID           string               `db:"uuid"`
+	CreatedAt      time.Time            `db:"created_at"`
+	UpdatedAt      time.Time            `db:"updated_at"`
+	DeletedAt      *time.Time           `db:"deleted_at"`
+	RoleName       string               `db:"role_name" validate:"required"`
+	Description    string               `db:"description" validate:"required"`
+	DefaultRole    bool                 `db:"default_role"`
+	OrganisationID *int64               `db:"organisation_id"`
+	Permissions    []*PermissionDBModel `db:"-"`
 }
 
 type PermissionDBModel struct {
-	ID             int64      `db:"id"`
-	UUID           string     `db:"uuid"`
-	CreatedAt      time.Time  `db:"created_at"`
-	UpdatedAt      time.Time  `db:"updated_at"`
-	DeletedAt      *time.Time `db:"deleted_at"`
-	PermissionName string     `db:"permission_name" validate:"required"`
+	ID                int64      `db:"id"`
+	UUID              string     `db:"uuid"`
+	CreatedAt         time.Time  `db:"created_at"`
+	UpdatedAt         time.Time  `db:"updated_at"`
+	DeletedAt         *time.Time `db:"deleted_at"`
+	PermissionName    string     `db:"permission_name" validate:"required"`
+	DefaultPermission bool       `db:"default_permission"`
+	OrganisationID    *int64     `db:"organisation_id"`
 }
