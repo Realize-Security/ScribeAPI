@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"Scribe/internal/infrastructure/persistence/cache"
 	"bytes"
 	"fmt"
 	"log"
@@ -9,7 +10,6 @@ import (
 	"testing"
 
 	"Scribe/internal/domain/entities"
-	"Scribe/internal/infrastructure/cache"
 	"Scribe/internal/services"
 	"Scribe/pkg/config"
 

@@ -3,8 +3,8 @@ package services
 import (
 	"Scribe/internal/domain/entities"
 	"Scribe/internal/domain/repositories"
-	"Scribe/internal/infrastructure/cache"
-	"Scribe/internal/infrastructure/database"
+	"Scribe/internal/infrastructure/persistence/cache"
+	"Scribe/internal/infrastructure/persistence/database"
 	"Scribe/pkg/config"
 	"fmt"
 	"log"

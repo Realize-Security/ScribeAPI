@@ -3,7 +3,7 @@ package services
 import (
 	"Scribe/internal/domain/entities"
 	"Scribe/internal/domain/repositories"
-	"Scribe/internal/infrastructure/cache"
+	"Scribe/internal/infrastructure/persistence/cache"
 	"Scribe/pkg/config"
 	"crypto/rand"
 	"crypto/rsa"

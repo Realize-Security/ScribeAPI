@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"Scribe/internal/domain/entities"
-	"Scribe/internal/infrastructure/cache"
+	"Scribe/internal/infrastructure/persistence/cache"
 	"Scribe/pkg/config"
 	"context"
 	"fmt"
