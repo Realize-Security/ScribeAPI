@@ -59,7 +59,7 @@ func TestUserHasPermission_MissingPermission(t *testing.T) {
 
 	// Set session with only one permission
 	sessionCache := cache.SessionCache.Get()
-	sessionCache.Set(1, entities.SessionState{PermissionIDs: []int{1}}, config.CacheNoTTLExpiry) // Has "user_list" (ID 1), missing others
+	sessionCache.Set(1, entities.SessionState{PermissionIDs: []int64{1}}, config.CacheNoTTLExpiry) // Has "user_list" (ID 1), missing others
 
 	auth, _ := services.NewAuthorisationService(nil)
 
@@ -96,7 +96,7 @@ func TestUserHasPermission_HasAllPermissions(t *testing.T) {
 
 	// Set session with all needed permissions
 	sessionCache := cache.SessionCache.Get()
-	sessionCache.Set(1, entities.SessionState{PermissionIDs: []int{1, 2, 3}}, config.CacheNoTTLExpiry)
+	sessionCache.Set(1, entities.SessionState{PermissionIDs: []int64{1, 2, 3}}, config.CacheNoTTLExpiry)
 
 	auth, _ := services.NewAuthorisationService(nil)
 
@@ -125,7 +125,7 @@ func TestLogFailedAuthorisation_FoundPermission(t *testing.T) {
 	auth, _ := services.NewAuthorisationService(nil)
 
 	requester := &entities.UserDBModel{ID: 1}
-	needed := map[string]int{"user_create": 2, "user_read": 3}
+	needed := map[string]int64{"user_create": 2, "user_read": 3}
 	failedID := 2
 
 	// Capture log
@@ -133,7 +133,7 @@ func TestLogFailedAuthorisation_FoundPermission(t *testing.T) {
 	log.SetOutput(&logBuf)
 	defer log.SetOutput(os.Stderr)
 
-	auth.LogFailedAuthorisation(requester, needed, failedID)
+	auth.LogFailedAuthorisation(requester, needed, int64(failedID))
 
 	logOutput := logBuf.String()
 	expected := formatExpectedLog(config.LogUserUnauthorised, 1, "user_create")
@@ -146,7 +146,7 @@ func TestLogFailedAuthorisation_NotFoundPermission(t *testing.T) {
 	auth, _ := services.NewAuthorisationService(nil)
 
 	requester := &entities.UserDBModel{ID: 1}
-	needed := map[string]int{"user_create": 2}
+	needed := map[string]int64{"user_create": 2}
 	failedID := 999 // Not in needed
 
 	// Capture log
@@ -154,7 +154,7 @@ func TestLogFailedAuthorisation_NotFoundPermission(t *testing.T) {
 	log.SetOutput(&logBuf)
 	defer log.SetOutput(os.Stderr)
 
-	auth.LogFailedAuthorisation(requester, needed, failedID)
+	auth.LogFailedAuthorisation(requester, needed, int64(failedID))
 
 	if logBuf.String() != "" {
 		t.Errorf("expected no log output, got '%s'", logBuf.String())
