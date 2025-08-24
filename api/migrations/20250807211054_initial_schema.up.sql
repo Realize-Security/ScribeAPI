@@ -5,12 +5,12 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- Organisations
 -- =========================================
 CREATE TABLE IF NOT EXISTS organisations (
-                                             id BIGSERIAL PRIMARY KEY,
-                                             uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
-                                             name VARCHAR(255) NOT NULL,
-                                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                             deleted_at TIMESTAMP
+    id BIGSERIAL PRIMARY KEY,
+    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_organisations_id ON organisations(id);
 
@@ -18,14 +18,14 @@ CREATE INDEX IF NOT EXISTS idx_organisations_id ON organisations(id);
 -- Organisation Domains
 -- =========================================
 CREATE TABLE IF NOT EXISTS organisation_domains (
-                                                    id BIGSERIAL PRIMARY KEY,
-                                                    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
-                                                    domain VARCHAR(255) NOT NULL,
-                                                    organisation_id BIGINT NOT NULL,
-                                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                    deleted_at TIMESTAMP,
-                                                    FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE
+    id BIGSERIAL PRIMARY KEY,
+    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
+    domain VARCHAR(255) NOT NULL,
+    organisation_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_organisation_domains_domain ON organisation_domains(domain);
 CREATE INDEX IF NOT EXISTS idx_organisation_domains_organisation_id ON organisation_domains(organisation_id);
@@ -34,17 +34,17 @@ CREATE INDEX IF NOT EXISTS idx_organisation_domains_organisation_id ON organisat
 -- Organisation Invites
 -- =========================================
 CREATE TABLE IF NOT EXISTS organisation_invites (
-                                                    id BIGSERIAL PRIMARY KEY,
-                                                    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
-                                                    organisation_id BIGINT NOT NULL,
-                                                    invite_token UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
-                                                    expires_at TIMESTAMP NOT NULL,
-                                                    email VARCHAR(255) NOT NULL,
-                                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                    deleted_at TIMESTAMP,
-                                                    FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE,
-                                                    CHECK (expires_at > CURRENT_TIMESTAMP)
+    id BIGSERIAL PRIMARY KEY,
+    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
+    organisation_id BIGINT NOT NULL,
+    invite_token UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CHECK (expires_at > CURRENT_TIMESTAMP)
 );
 CREATE INDEX IF NOT EXISTS idx_organisation_invites_organisation_id ON organisation_invites(organisation_id);
 
@@ -52,16 +52,16 @@ CREATE INDEX IF NOT EXISTS idx_organisation_invites_organisation_id ON organisat
 -- Roles
 -- =========================================
 CREATE TABLE IF NOT EXISTS roles (
-                                     id BIGSERIAL PRIMARY KEY,
-                                     uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
-                                     role_name VARCHAR(255) NOT NULL,
-                                     description VARCHAR(500),
-                                     default_role BOOLEAN DEFAULT FALSE,
-                                     organisation_id BIGINT,
-                                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                     deleted_at TIMESTAMP,
-                                     FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE
+    id BIGSERIAL PRIMARY KEY,
+    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
+    role_name VARCHAR(255) NOT NULL,
+    description VARCHAR(500),
+    default_role BOOLEAN DEFAULT FALSE,
+    organisation_id BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_roles_role_name ON roles(role_name);
 CREATE INDEX IF NOT EXISTS idx_roles_organisation_id ON roles(organisation_id);
@@ -75,15 +75,15 @@ CREATE UNIQUE INDEX uniq_roles_role_name_org_active
 -- Permissions
 -- =========================================
 CREATE TABLE IF NOT EXISTS permissions (
-                                           id BIGSERIAL PRIMARY KEY,
-                                           uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
-                                           permission_name VARCHAR(255) NOT NULL,
-                                           default_permission BOOLEAN DEFAULT FALSE,
-                                           organisation_id BIGINT,
-                                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                           deleted_at TIMESTAMP,
-                                           FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE
+    id BIGSERIAL PRIMARY KEY,
+    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
+    permission_name VARCHAR(255) NOT NULL,
+    default_permission BOOLEAN DEFAULT FALSE,
+    organisation_id BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_permissions_permission_name ON permissions(permission_name);
 CREATE INDEX IF NOT EXISTS idx_permissions_organisation_id ON permissions(organisation_id);
@@ -97,16 +97,16 @@ CREATE UNIQUE INDEX uniq_permissions_perm_name_org_active
 -- Organisation Roles
 -- =========================================
 CREATE TABLE IF NOT EXISTS organisation_roles (
-                                                  id BIGSERIAL PRIMARY KEY,
-                                                  uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
-                                                  organisation_id BIGINT NOT NULL,
-                                                  role_id BIGINT NOT NULL,
-                                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                  deleted_at TIMESTAMP,
-                                                  FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE,
-                                                  FOREIGN KEY (role_id) REFERENCES roles(id) ON UPDATE CASCADE ON DELETE CASCADE,
-                                                  UNIQUE (organisation_id, role_id)
+    id BIGSERIAL PRIMARY KEY,
+    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
+    organisation_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    UNIQUE (organisation_id, role_id)
 );
 CREATE INDEX IF NOT EXISTS idx_organisation_roles_organisation_id ON organisation_roles(organisation_id);
 CREATE INDEX IF NOT EXISTS idx_organisation_roles_role_id ON organisation_roles(role_id);
@@ -115,16 +115,16 @@ CREATE INDEX IF NOT EXISTS idx_organisation_roles_role_id ON organisation_roles(
 -- Organisation Permissions
 -- =========================================
 CREATE TABLE IF NOT EXISTS organisation_permissions (
-                                                        id BIGSERIAL PRIMARY KEY,
-                                                        uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
-                                                        organisation_id BIGINT NOT NULL,
-                                                        permission_id BIGINT NOT NULL,
-                                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                        deleted_at TIMESTAMP,
-                                                        FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE,
-                                                        FOREIGN KEY (permission_id) REFERENCES permissions(id) ON UPDATE CASCADE ON DELETE CASCADE,
-                                                        UNIQUE (organisation_id, permission_id)
+    id BIGSERIAL PRIMARY KEY,
+    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
+    organisation_id BIGINT NOT NULL,
+    permission_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES permissions(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    UNIQUE (organisation_id, permission_id)
 );
 CREATE INDEX IF NOT EXISTS idx_organisation_permissions_organisation_id ON organisation_permissions(organisation_id);
 CREATE INDEX IF NOT EXISTS idx_organisation_permissions_permission_id ON organisation_permissions(permission_id);
@@ -133,20 +133,20 @@ CREATE INDEX IF NOT EXISTS idx_organisation_permissions_permission_id ON organis
 -- Users
 -- =========================================
 CREATE TABLE IF NOT EXISTS users (
-                                     id BIGSERIAL PRIMARY KEY,
-                                     uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
-                                     first_name VARCHAR(255) NOT NULL,
-                                     last_name VARCHAR(255) NOT NULL,
-                                     email VARCHAR(255) NOT NULL,
-                                     password TEXT NOT NULL,
-                                     is_active BOOLEAN DEFAULT TRUE,
-                                     terms_accepted BOOLEAN DEFAULT FALSE,
-                                     password_reset_token VARCHAR(255) UNIQUE,
-                                     password_reset_expires_at TIMESTAMP,
-                                     last_login_at TIMESTAMP,
-                                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                     deleted_at TIMESTAMP
+    id BIGSERIAL PRIMARY KEY,
+    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    terms_accepted BOOLEAN DEFAULT FALSE,
+    password_reset_token VARCHAR(255) UNIQUE,
+    password_reset_expires_at TIMESTAMP,
+    last_login_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_id ON users(id);
@@ -160,16 +160,16 @@ CREATE UNIQUE INDEX uniq_users_email_active
 -- User Organisations
 -- =========================================
 CREATE TABLE IF NOT EXISTS user_organisations (
-                                                  id BIGSERIAL PRIMARY KEY,
-                                                  user_id BIGINT NOT NULL,
-                                                  organisation_id BIGINT NOT NULL,
-                                                  joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                  left_at TIMESTAMP,
-                                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                  FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
-                                                  FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE,
-                                                  UNIQUE(user_id, organisation_id)
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    organisation_id BIGINT NOT NULL,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    left_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    UNIQUE(user_id, organisation_id)
 );
 CREATE INDEX IF NOT EXISTS idx_user_organisations_user_id ON user_organisations(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_organisations_organisation_id ON user_organisations(organisation_id);
@@ -178,15 +178,15 @@ CREATE INDEX IF NOT EXISTS idx_user_organisations_organisation_id ON user_organi
 -- Bad Users
 -- =========================================
 CREATE TABLE IF NOT EXISTS bad_users (
-                                         id BIGSERIAL PRIMARY KEY,
-                                         uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
-                                         email VARCHAR(255) NOT NULL,
-                                         bad_user_reason VARCHAR(500) DEFAULT '',
-                                         organisation_id BIGINT,
-                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                         deleted_at TIMESTAMP,
-                                         FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE SET NULL
+    id BIGSERIAL PRIMARY KEY,
+    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    bad_user_reason VARCHAR(500) DEFAULT '',
+    organisation_id BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 CREATE INDEX IF NOT EXISTS idx_bad_users_organisation_id ON bad_users(organisation_id);
 
@@ -194,11 +194,11 @@ CREATE INDEX IF NOT EXISTS idx_bad_users_organisation_id ON bad_users(organisati
 -- Role Permissions
 -- =========================================
 CREATE TABLE IF NOT EXISTS role_permissions (
-                                                role_id BIGINT NOT NULL,
-                                                permission_id BIGINT NOT NULL,
-                                                PRIMARY KEY (role_id, permission_id),
-                                                FOREIGN KEY (role_id) REFERENCES roles(id) ON UPDATE CASCADE ON DELETE CASCADE,
-                                                FOREIGN KEY (permission_id) REFERENCES permissions(id) ON UPDATE CASCADE ON DELETE CASCADE
+    role_id BIGINT NOT NULL,
+    permission_id BIGINT NOT NULL,
+    PRIMARY KEY (role_id, permission_id),
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES permissions(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_role_permissions_role_id ON role_permissions(role_id);
 
@@ -206,17 +206,17 @@ CREATE INDEX IF NOT EXISTS idx_role_permissions_role_id ON role_permissions(role
 -- User Roles
 -- =========================================
 CREATE TABLE IF NOT EXISTS user_roles (
-                                          id BIGSERIAL PRIMARY KEY,
-                                          user_id BIGINT NOT NULL,
-                                          organisation_id BIGINT NOT NULL,
-                                          role_id BIGINT NOT NULL,
-                                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                          deleted_at TIMESTAMP,
-                                          FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
-                                          FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE,
-                                          FOREIGN KEY (role_id) REFERENCES roles(id) ON UPDATE CASCADE ON DELETE CASCADE,
-                                          UNIQUE (user_id, organisation_id, role_id)
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    organisation_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (organisation_id) REFERENCES organisations(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    UNIQUE (user_id, organisation_id, role_id)
 );
 CREATE INDEX IF NOT EXISTS idx_user_roles_organisation_id ON user_roles(organisation_id);
 CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON user_roles(role_id);
