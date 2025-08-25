@@ -1,18 +1,19 @@
 package entities
 
 import (
+	"Scribe/handlers/http/dto/request"
 	"testing"
 )
 
 func TestUserRegistration_Sanitize(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    UserRegistration
-		expected UserRegistration
+		input    request.UserRegistration
+		expected request.UserRegistration
 	}{
 		{
 			name: "trims whitespace from all string fields",
-			input: UserRegistration{
+			input: request.UserRegistration{
 				FirstName:       "  John  ",
 				LastName:        "  Doe  ",
 				Email:           "  JOHN@EXAMPLE.COM  ",
@@ -20,7 +21,7 @@ func TestUserRegistration_Sanitize(t *testing.T) {
 				ConfirmPassword: "password123",
 				TermsAccepted:   true,
 			},
-			expected: UserRegistration{
+			expected: request.UserRegistration{
 				FirstName:       "John",
 				LastName:        "Doe",
 				Email:           "john@example.com",
@@ -31,12 +32,12 @@ func TestUserRegistration_Sanitize(t *testing.T) {
 		},
 		{
 			name: "converts email to lowercase",
-			input: UserRegistration{
+			input: request.UserRegistration{
 				FirstName: "Jane",
 				LastName:  "Smith",
 				Email:     "JANE.SMITH@EXAMPLE.COM",
 			},
-			expected: UserRegistration{
+			expected: request.UserRegistration{
 				FirstName: "Jane",
 				LastName:  "Smith",
 				Email:     "jane.smith@example.com",
@@ -44,12 +45,12 @@ func TestUserRegistration_Sanitize(t *testing.T) {
 		},
 		{
 			name: "handles mixed case email with whitespace",
-			input: UserRegistration{
+			input: request.UserRegistration{
 				FirstName: "Bob",
 				LastName:  "Johnson",
 				Email:     "  Bob.Johnson@Gmail.COM  ",
 			},
-			expected: UserRegistration{
+			expected: request.UserRegistration{
 				FirstName: "Bob",
 				LastName:  "Johnson",
 				Email:     "bob.johnson@gmail.com",
@@ -57,12 +58,12 @@ func TestUserRegistration_Sanitize(t *testing.T) {
 		},
 		{
 			name: "handles empty strings",
-			input: UserRegistration{
+			input: request.UserRegistration{
 				FirstName: "",
 				LastName:  "",
 				Email:     "",
 			},
-			expected: UserRegistration{
+			expected: request.UserRegistration{
 				FirstName: "",
 				LastName:  "",
 				Email:     "",
@@ -70,12 +71,12 @@ func TestUserRegistration_Sanitize(t *testing.T) {
 		},
 		{
 			name: "handles strings with only whitespace",
-			input: UserRegistration{
+			input: request.UserRegistration{
 				FirstName: "   ",
 				LastName:  "\t\n",
 				Email:     "  \r\n  ",
 			},
-			expected: UserRegistration{
+			expected: request.UserRegistration{
 				FirstName: "",
 				LastName:  "",
 				Email:     "",
@@ -83,14 +84,14 @@ func TestUserRegistration_Sanitize(t *testing.T) {
 		},
 		{
 			name: "preserves password fields unchanged",
-			input: UserRegistration{
+			input: request.UserRegistration{
 				FirstName:       "Alice",
 				LastName:        "Wonder",
 				Email:           "alice@example.com",
 				Password:        "  mySecretPassword  ",
 				ConfirmPassword: "  mySecretPassword  ",
 			},
-			expected: UserRegistration{
+			expected: request.UserRegistration{
 				FirstName:       "Alice",
 				LastName:        "Wonder",
 				Email:           "alice@example.com",
@@ -100,12 +101,12 @@ func TestUserRegistration_Sanitize(t *testing.T) {
 		},
 		{
 			name: "handles special characters in names",
-			input: UserRegistration{
+			input: request.UserRegistration{
 				FirstName: "  José  ",
 				LastName:  "  O'Connor  ",
 				Email:     "  JOSE.OCONNOR@EXAMPLE.COM  ",
 			},
-			expected: UserRegistration{
+			expected: request.UserRegistration{
 				FirstName: "José",
 				LastName:  "O'Connor",
 				Email:     "jose.oconnor@example.com",
@@ -117,7 +118,7 @@ func TestUserRegistration_Sanitize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a copy to avoid modifying the test case
 			user := tt.input
-			user.Sanitize()
+			user.CleanWhiteSpace()
 
 			// Check each field
 			if user.FirstName != tt.expected.FirstName {
@@ -160,7 +161,7 @@ func TestUserRegistration_Sanitize_IndividualFields(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			user := &UserRegistration{}
+			user := &request.UserRegistration{}
 
 			// Set the specific field
 			switch tc.field {
@@ -172,7 +173,7 @@ func TestUserRegistration_Sanitize_IndividualFields(t *testing.T) {
 				user.Email = tc.input
 			}
 
-			user.Sanitize()
+			user.CleanWhiteSpace()
 
 			// Check the specific field
 			var actual string
@@ -194,7 +195,7 @@ func TestUserRegistration_Sanitize_IndividualFields(t *testing.T) {
 
 // Benchmark test to ensure performance is acceptable
 func BenchmarkUserRegistration_Sanitize(b *testing.B) {
-	user := UserRegistration{
+	user := request.UserRegistration{
 		FirstName:       "  John  ",
 		LastName:        "  Doe  ",
 		Email:           "  JOHN.DOE@EXAMPLE.COM  ",
@@ -206,6 +207,6 @@ func BenchmarkUserRegistration_Sanitize(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		testUser := user
-		testUser.Sanitize()
+		testUser.CleanWhiteSpace()
 	}
 }
