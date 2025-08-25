@@ -1,118 +1,94 @@
 package main
 
 import (
-	"Scribe/handlers"
+	"Scribe/handlers/handler"
+	"Scribe/handlers/http/router"
 	"Scribe/internal/domain/repositories"
-	"Scribe/internal/domain/validators"
 	"Scribe/internal/infrastructure/persistence/cache"
 	"Scribe/internal/infrastructure/persistence/database"
-	"Scribe/internal/services"
+	"Scribe/internal/services/user"
 	"Scribe/internal/setup"
+	"Scribe/pkg/authentication"
 	"Scribe/pkg/config"
+	"Scribe/pkg/validators"
 	"log"
-	"os"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
+	if err := initDatabase(); err != nil {
+		log.Fatal(err)
+	}
+
+	initCache()
+	validators.Validator = validators.InitValidator()
+	deps := setupDependencies()
+
+	r := deps.router.Setup()
+	if err := r.Run("0.0.0.0:8080"); err != nil {
+		log.Fatal("Failed to start server:", err)
+	}
+}
+
+func initDatabase() error {
 	dbConf := database.Config{
 		MaxIdle:             config.DBMaxIdleConnectionsValue,
 		MaxOpen:             config.DBMaxOpenConnectionsValue,
 		ConnMaxLifetime:     config.ConnMaxLifetimeValue,
 		HealthCheckInterval: config.DBHealthCheckInterval,
 	}
-	err := database.ConnectDB(dbConf)
-	if err != nil {
-		log.Printf(config.DBInitialisationFailed, err.Error())
-		os.Exit(config.ExitBadConnection)
+
+	if err := database.ConnectDB(dbConf); err != nil {
+		return err
 	}
+
 	database.MigrateDb(database.Db)
 	go database.DBHealthMonitor(dbConf)
 
-	// Cache initialisation
+	if err := setup.SeedRolesAndPermissions(database.Db); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func initCache() {
 	cache.SessionCache.Get()
 	cache.PermissionIDCache.Get()
-
-	// Seed database
-	err = setup.SeedRolesAndPermissions(database.Db) // Updated to sqlx
-	if err != nil {
-		log.Printf("error seeding database: %v", err)
-		os.Exit(config.ExitCantCreate)
-	}
-
-	// Validators initialisation
-	validators.Validator = validators.InitValidator()
-
-	router := configureRouter()
-	_ = router.Run("0.0.0.0:8080")
 }
 
-func configureRouter() *gin.Engine {
-	r := gin.Default()
-	err := r.SetTrustedProxies(nil)
-	if err != nil {
-		log.Printf("failed to set trusted proxies: %s", err)
-		os.Exit(config.ExitCantCreate)
-	}
-
-	if isProduction() {
-		r.Use(cors.Default())
-
-		corsConfig := cors.Config{
-			AllowOrigins: []string{
-				"https://scribe-dev.realizesec.com",
-				"https://scribe-stage.realizesec.com",
-				"https://scribe.realizesec.com",
-			},
-			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-			AllowHeaders:     []string{"Origin", "Content-Type", "Cookie"},
-			ExposeHeaders:    []string{"Content-Length"},
-			AllowCredentials: true,
-			MaxAge:           12 * 60 * 60,
-		}
-
-		r.Use(cors.New(corsConfig))
-	}
-
-	initialiseHandlers(r)
-	return r
+type Dependencies struct {
+	router *router.Router
 }
 
-// initialiseHandlers initialises handlers for routes and types/domains.
-func initialiseHandlers(r *gin.Engine) {
-	handlers.ApiHealthCheckRoutes(&r.RouterGroup)
-
+func setupDependencies() Dependencies {
 	userRepository := repositories.NewUserRepository(database.Db)
-	authenticationService, err := services.NewAuthenticationService(userRepository)
+	authenticationService, err := authentication.NewAuthenticationService(userRepository)
 	if err != nil {
-		log.Printf("failed to initialise authentication service: %s", err.Error())
-		os.Exit(config.ExitError)
+		log.Fatal("Failed to initialize authentication service:", err)
 	}
 
-	authorisationService, err := services.NewAuthorisationService(userRepository)
+	authorisationService, err := authentication.NewAuthorisationService(userRepository)
 	if err != nil {
-		log.Printf("failed to initialise authorisation service: %s", err.Error())
-		os.Exit(config.ExitError)
+		log.Fatal("Failed to initialize authorisation service:", err)
 	}
 
-	// Cache Permissions
-	err = authorisationService.CachePermissionIDs()
-	if err != nil {
-		log.Printf("error caching permissions in main.go: %v", err)
-		os.Exit(config.ExitCantCreate)
+	if err := authorisationService.CachePermissionIDs(); err != nil {
+		log.Fatal("Error caching permissions:", err)
 	}
 
-	userServiceRepository := services.NewUserServiceRepository(userRepository, authenticationService)
-	userHandler := handlers.NewUserHandler(userServiceRepository, authenticationService, authorisationService)
+	userService := user.NewService(userRepository, authenticationService)
+	userHandler := handler.NewUserHandler(userService)
 
-	// Register routes
-	userHandler.Users(&r.RouterGroup)
-}
+	r := router.NewRouter(
+		userHandler,
+		authenticationService,
+		authorisationService,
+	)
 
-func isProduction() bool {
-	return os.Getenv("DEPLOYMENT") == "production"
+	return Dependencies{
+		router: r,
+	}
 }
