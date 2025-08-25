@@ -52,22 +52,10 @@ func (h *UserHandler) Register(c *gin.Context) {
 
 	createdUser, err := h.userService.Register(c.Request.Context(), input)
 	if err != nil {
-		// Map service errors to HTTP responses
-		switch err.Error() {
-		case "user already exists":
-			c.JSON(http.StatusConflict, gin.H{
-				config.ApiError: "Email already registered",
-			})
-		case "invalid email format":
-			c.JSON(http.StatusBadRequest, gin.H{
-				config.ApiError: "Invalid email format",
-			})
-		default:
-			log.Printf("Failed to create user: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{
-				config.ApiError: config.LogUserCreateFailed,
-			})
-		}
+		log.Printf("Failed to create user in 'registration': %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			config.ApiError: config.LogUserCreateFailed,
+		})
 		return
 	}
 
