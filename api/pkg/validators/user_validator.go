@@ -1,7 +1,7 @@
 package validators
 
 import (
-	"Scribe/internal/domain/entities"
+	"Scribe/handlers/http/dto/request"
 	"Scribe/pkg/config"
 	"regexp"
 	"strings"
@@ -22,7 +22,7 @@ func namePattern(fl validator.FieldLevel) bool {
 }
 
 func passwordsMatch(fl validator.FieldLevel) bool {
-	user, ok := fl.Parent().Interface().(entities.UserRegistration)
+	user, ok := fl.Parent().Interface().(request.UserRegistration)
 	if !ok {
 		return false
 	}
@@ -35,7 +35,7 @@ func passwordLength(fl validator.FieldLevel) bool {
 }
 
 func emailNotInPassword(fl validator.FieldLevel) bool {
-	user, ok := fl.Parent().Interface().(entities.UserRegistration)
+	user, ok := fl.Parent().Interface().(request.UserRegistration)
 	if !ok {
 		return false
 	}

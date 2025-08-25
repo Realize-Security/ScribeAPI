@@ -1,7 +1,7 @@
 package validators
 
 import (
-	"Scribe/internal/domain/entities"
+	"Scribe/handlers/http/dto/request"
 	"Scribe/pkg/config"
 	"reflect"
 	"strings"
@@ -129,12 +129,12 @@ func TestNamePattern(t *testing.T) {
 func TestPasswordsMatch(t *testing.T) {
 	tests := []struct {
 		name     string
-		user     entities.UserRegistration
+		user     request.UserRegistration
 		expected bool
 	}{
 		{
 			name: "Passwords match",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				Password:        "password123",
 				ConfirmPassword: "password123",
 			},
@@ -142,7 +142,7 @@ func TestPasswordsMatch(t *testing.T) {
 		},
 		{
 			name: "Passwords don't match",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				Password:        "password123",
 				ConfirmPassword: "password456",
 			},
@@ -150,7 +150,7 @@ func TestPasswordsMatch(t *testing.T) {
 		},
 		{
 			name: "Empty passwords match",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				Password:        "",
 				ConfirmPassword: "",
 			},
@@ -158,7 +158,7 @@ func TestPasswordsMatch(t *testing.T) {
 		},
 		{
 			name: "One empty password",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				Password:        "password123",
 				ConfirmPassword: "",
 			},
@@ -219,12 +219,12 @@ func TestPasswordLength(t *testing.T) {
 func TestEmailNotInPassword(t *testing.T) {
 	tests := []struct {
 		name     string
-		user     entities.UserRegistration
+		user     request.UserRegistration
 		expected bool
 	}{
 		{
 			name: "Email not in password",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				Email:    "user@example.com",
 				Password: "securepassword123",
 			},
@@ -232,7 +232,7 @@ func TestEmailNotInPassword(t *testing.T) {
 		},
 		{
 			name: "Email in password",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				Email:    "user@example.com",
 				Password: "user@example.com123",
 			},
@@ -240,7 +240,7 @@ func TestEmailNotInPassword(t *testing.T) {
 		},
 		{
 			name: "Reversed email in password",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				Email:    "user@example.com",
 				Password: "moc.elpmaxe@resu123",
 			},
@@ -248,7 +248,7 @@ func TestEmailNotInPassword(t *testing.T) {
 		},
 		{
 			name: "Email in password with different case",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				Email:    "User@Example.Com",
 				Password: "user@example.com123",
 			},
@@ -256,7 +256,7 @@ func TestEmailNotInPassword(t *testing.T) {
 		},
 		{
 			name: "Partial email in password",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				Email:    "user@example.com",
 				Password: "userexample123",
 			},
@@ -264,7 +264,7 @@ func TestEmailNotInPassword(t *testing.T) {
 		},
 		{
 			name: "Empty email and password",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				Email:    "",
 				Password: "",
 			},
@@ -272,7 +272,7 @@ func TestEmailNotInPassword(t *testing.T) {
 		},
 		{
 			name: "Empty email",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				Email:    "",
 				Password: "password123",
 			},
@@ -352,12 +352,12 @@ func TestValidatorsWithRealValidator(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		user      entities.UserRegistration
+		user      request.UserRegistration
 		shouldErr bool
 	}{
 		{
 			name: "Valid user",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				FirstName:       "John",
 				LastName:        "Doe",
 				Email:           "john@example.com",
@@ -369,7 +369,7 @@ func TestValidatorsWithRealValidator(t *testing.T) {
 		},
 		{
 			name: "Invalid first name pattern",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				FirstName:       "John123",
 				LastName:        "Doe",
 				Email:           "john@example.com",
@@ -381,7 +381,7 @@ func TestValidatorsWithRealValidator(t *testing.T) {
 		},
 		{
 			name: "Invalid last name pattern",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				FirstName:       "John",
 				LastName:        "Doe@123",
 				Email:           "john@example.com",
@@ -393,7 +393,7 @@ func TestValidatorsWithRealValidator(t *testing.T) {
 		},
 		{
 			name: "First name too long",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				FirstName:       strings.Repeat("a", 31), // > MaxUserLen
 				LastName:        "Doe",
 				Email:           "john@example.com",
@@ -405,7 +405,7 @@ func TestValidatorsWithRealValidator(t *testing.T) {
 		},
 		{
 			name: "Password too short",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				FirstName:       "John",
 				LastName:        "Doe",
 				Email:           "john@example.com",
@@ -417,7 +417,7 @@ func TestValidatorsWithRealValidator(t *testing.T) {
 		},
 		{
 			name: "Passwords don't match",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				FirstName:       "John",
 				LastName:        "Doe",
 				Email:           "john@example.com",
@@ -429,7 +429,7 @@ func TestValidatorsWithRealValidator(t *testing.T) {
 		},
 		{
 			name: "Missing required field",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				FirstName:       "",
 				LastName:        "Doe",
 				Email:           "john@example.com",
@@ -441,7 +441,7 @@ func TestValidatorsWithRealValidator(t *testing.T) {
 		},
 		{
 			name: "Terms not accepted",
-			user: entities.UserRegistration{
+			user: request.UserRegistration{
 				FirstName:       "John",
 				LastName:        "Doe",
 				Email:           "john@example.com",
