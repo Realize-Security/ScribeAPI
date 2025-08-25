@@ -1,9 +1,10 @@
-package services
+package authentication
 
 import (
 	"Scribe/internal/domain/entities"
 	"Scribe/internal/domain/repositories"
 	"Scribe/internal/infrastructure/persistence/cache"
+	"Scribe/internal/services"
 	"Scribe/pkg/config"
 	"crypto/rand"
 	"crypto/rsa"
@@ -41,7 +42,7 @@ type AuthenticationService struct {
 }
 
 func NewAuthenticationService(ur repositories.UserRepository) (*AuthenticationService, error) {
-	certManager, err := NewCertManager()
+	certManager, err := services.NewCertManager()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize certificate manager: %w", err)
 	}

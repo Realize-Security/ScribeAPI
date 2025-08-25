@@ -1,7 +1,8 @@
-package services_test
+package authentication_test
 
 import (
 	"Scribe/internal/infrastructure/persistence/cache"
+	"Scribe/pkg/authentication"
 	"bytes"
 	"fmt"
 	"log"
@@ -10,7 +11,6 @@ import (
 	"testing"
 
 	"Scribe/internal/domain/entities"
-	"Scribe/internal/services"
 	"Scribe/pkg/config"
 
 	"net/http/httptest"
@@ -36,7 +36,7 @@ func TestUserHasPermission_SessionNotFound(t *testing.T) {
 
 	// No session set for user ID 1
 
-	auth, _ := services.NewAuthorisationService(nil) // ur not used, pass nil
+	auth, _ := authentication.NewAuthorisationService(nil) // ur not used, pass nil
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -61,7 +61,7 @@ func TestUserHasPermission_MissingPermission(t *testing.T) {
 	sessionCache := cache.SessionCache.Get()
 	sessionCache.Set(1, entities.SessionState{PermissionIDs: []int64{1}}, config.CacheNoTTLExpiry) // Has "user_list" (ID 1), missing others
 
-	auth, _ := services.NewAuthorisationService(nil)
+	auth, _ := authentication.NewAuthorisationService(nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -98,7 +98,7 @@ func TestUserHasPermission_HasAllPermissions(t *testing.T) {
 	sessionCache := cache.SessionCache.Get()
 	sessionCache.Set(1, entities.SessionState{PermissionIDs: []int64{1, 2, 3}}, config.CacheNoTTLExpiry)
 
-	auth, _ := services.NewAuthorisationService(nil)
+	auth, _ := authentication.NewAuthorisationService(nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -122,7 +122,7 @@ func TestUserHasPermission_HasAllPermissions(t *testing.T) {
 }
 
 func TestLogFailedAuthorisation_FoundPermission(t *testing.T) {
-	auth, _ := services.NewAuthorisationService(nil)
+	auth, _ := authentication.NewAuthorisationService(nil)
 
 	requester := &entities.UserDBModel{ID: 1}
 	needed := map[string]int64{"user_create": 2, "user_read": 3}
@@ -143,7 +143,7 @@ func TestLogFailedAuthorisation_FoundPermission(t *testing.T) {
 }
 
 func TestLogFailedAuthorisation_NotFoundPermission(t *testing.T) {
-	auth, _ := services.NewAuthorisationService(nil)
+	auth, _ := authentication.NewAuthorisationService(nil)
 
 	requester := &entities.UserDBModel{ID: 1}
 	needed := map[string]int64{"user_create": 2}
