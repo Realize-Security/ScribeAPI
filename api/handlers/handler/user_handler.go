@@ -86,7 +86,6 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Call service - it returns AuthSet and handles cookie setting internally
 	err := h.userService.Login(c.Request.Context(), req.Email, req.Password, c)
 	if err != nil {
 		log.Printf("Login failed for email %s: %v", req.Email, err)
