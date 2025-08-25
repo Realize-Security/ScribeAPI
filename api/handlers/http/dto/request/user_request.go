@@ -16,7 +16,7 @@ type UserLogin struct {
 	Password string `json:"password" validate:"required"`
 }
 
-func (u *UserRegistration) Sanitize() {
+func (u *UserRegistration) CleanWhiteSpace() {
 	u.FirstName = strings.TrimSpace(u.FirstName)
 	u.LastName = strings.TrimSpace(u.LastName)
 	u.Email = strings.TrimSpace(strings.ToLower(u.Email))
