@@ -107,7 +107,7 @@ func (s *AuthServiceTestSuite) TestGenerateAuthToken() {
 
 		claims, ok := token.Claims.(*entities.JWTCustomClaims)
 		assert.True(s.T(), ok)
-		assert.Equal(s.T(), userID, claims.UserID)
+		assert.Equal(s.T(), int64(userID), claims.UserID)
 	})
 
 	s.Run("fails with an invalid int", func() {
@@ -225,7 +225,7 @@ func (s *AuthServiceTestSuite) TestValidateRefreshToken() {
 
 		resultID, err := s.auth.ValidateRefreshToken(refreshToken)
 		assert.NoError(s.T(), err)
-		assert.Equal(s.T(), userID, resultID)
+		assert.Equal(s.T(), int64(userID), resultID)
 	})
 
 	s.Run("rejects expired refresh token", func() {
@@ -234,7 +234,7 @@ func (s *AuthServiceTestSuite) TestValidateRefreshToken() {
 
 		resultUUID, err := s.auth.ValidateRefreshToken(expiredToken)
 		assert.Error(s.T(), err)
-		assert.Equal(s.T(), -1, resultUUID)
+		assert.Equal(s.T(), int64(-1), resultUUID)
 	})
 
 	s.Run("rejects token with invalid signing method", func() {
@@ -248,9 +248,9 @@ func (s *AuthServiceTestSuite) TestValidateRefreshToken() {
 		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 		signedToken, _ := token.SignedString(s.auth.keys.authPrivateKey)
 
-		resultUUID, err := s.auth.ValidateRefreshToken(signedToken)
+		resultID, err := s.auth.ValidateRefreshToken(signedToken)
 		assert.Error(s.T(), err)
-		assert.Equal(s.T(), -1, resultUUID)
+		assert.Equal(s.T(), int64(-1), resultID)
 		assert.Contains(s.T(), err.Error(), "unexpected signing method")
 	})
 }
@@ -271,7 +271,7 @@ func (s *AuthServiceTestSuite) TestTokenClaimsFromRequestAndValidate() {
 
 		claims, err := s.auth.TokenClaimsFromRequestAndValidate(c)
 		assert.NoError(s.T(), err)
-		assert.Equal(s.T(), userID, claims.UserID)
+		assert.Equal(s.T(), int64(userID), claims.UserID)
 	})
 
 	s.Run("fails with invalid token", func() {
